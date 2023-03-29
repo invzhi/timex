@@ -42,6 +42,32 @@ func TestDateFromTime(t *testing.T) {
 	}
 }
 
+func TestDateQuarter(t *testing.T) {
+	tests := []struct {
+		month   int
+		quarter int
+	}{
+		{1, 1},
+		{2, 1},
+		{3, 1},
+		{4, 2},
+		{5, 2},
+		{6, 2},
+		{7, 3},
+		{8, 3},
+		{9, 3},
+		{10, 4},
+		{11, 4},
+		{12, 4},
+	}
+	for _, tt := range tests {
+		date, err := NewDate(2000, tt.month, 1)
+		assert.NoError(t, err)
+
+		assert.Equal(t, tt.quarter, date.Quarter())
+	}
+}
+
 func TestDateISOWeek(t *testing.T) {
 	tests := []struct {
 		year  int

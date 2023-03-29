@@ -58,14 +58,19 @@ func (d Date) Time(location *time.Location) time.Time {
 	return time.Date(d.year, time.Month(d.month), d.day, 0, 0, 0, 0, location)
 }
 
-// Year returns the year of specified by d.
+// Year returns the year specified by d.
 func (d Date) Year() int { return d.year }
 
-// Month returns the month of specified by d.
+// Month returns the month specified by d.
 func (d Date) Month() int { return d.month }
 
 // Day returns the day of month specified by d.
 func (d Date) Day() int { return d.day }
+
+// Quarter returns the quarter specified by d.
+func (d Date) Quarter() int {
+	return (d.month-1)/3 + 1
+}
 
 // DayOfYear returns the day of year specified by d.
 func (d Date) DayOfYear() int {
