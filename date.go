@@ -53,6 +53,11 @@ func Today(locs ...*time.Location) Date {
 	return FromTime(t)
 }
 
+// Time returns the time.Time specified by d in the given location.
+func (d Date) Time(location *time.Location) time.Time {
+	return time.Date(d.year, time.Month(d.month), d.day, 0, 0, 0, 0, location)
+}
+
 // Year returns the year of specified by d.
 func (d Date) Year() int { return d.year }
 
