@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Date represents a date with day precision.
 type Date struct {
 	year  int
 	month int
@@ -38,19 +39,16 @@ func MustNewDate(year, month, day int) Date {
 	return date
 }
 
-// FromTime returns the date specified by t.
-func FromTime(t time.Time) Date {
+// DateFromTime returns the date specified by t.
+func DateFromTime(t time.Time) Date {
 	year, month, day := t.Date()
 	return Date{year: year, month: int(month), day: day}
 }
 
-// Today returns the current date.
-func Today(locs ...*time.Location) Date {
-	t := time.Now()
-	if len(locs) > 0 {
-		t = t.In(locs[0])
-	}
-	return FromTime(t)
+// Today returns the current date in the given location.
+func Today(location *time.Location) Date {
+	t := time.Now().In(location)
+	return DateFromTime(t)
 }
 
 // Time returns the time.Time specified by d in the given location.

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestNewDateError(t *testing.T) {
+func TestNewDateErrors(t *testing.T) {
 	tests := []struct {
 		year, month, day int
 		errString        string
@@ -25,13 +25,17 @@ func TestNewDateError(t *testing.T) {
 	for _, tt := range tests {
 		_, err := NewDate(tt.year, tt.month, tt.day)
 		assert.EqualError(t, err, tt.errString)
+
+		assert.Panicsf(t, func() {
+			_ = MustNewDate(tt.year, tt.month, tt.day)
+		}, "timex: NewDate: "+tt.errString)
 	}
 }
 
 func TestDateFromTime(t *testing.T) {
 	tt := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
 	for i := 0; tt.Year() < 10000; i++ {
-		date := FromTime(tt)
+		date := DateFromTime(tt)
 		assert.Equal(t, tt.Year(), date.Year())
 		assert.Equal(t, int(tt.Month()), date.Month())
 		assert.Equal(t, tt.Day(), date.Day())
