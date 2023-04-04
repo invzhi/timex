@@ -142,6 +142,11 @@ func (d Date) After(dd Date) bool {
 		d.year == dd.year && d.month == dd.month && d.day > dd.day
 }
 
+// Equal reports whether the date d and dd is the same date.
+func (d Date) Equal(dd Date) bool {
+	return d.year == dd.year && d.month == dd.month && d.day == dd.day
+}
+
 // daysInYear[month] counts the number of days in a non-leap year when the month ends.
 var daysInYear = [...]int32{
 	0,

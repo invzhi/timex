@@ -1,9 +1,10 @@
 package timex
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDateErrors(t *testing.T) {
@@ -218,8 +219,9 @@ func TestDateBeforeAfter(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.Equal(t, tt.before, tt.d1.Before(tt.d2), tt)
-		assert.Equal(t, tt.after, tt.d1.After(tt.d2), tt)
+		assert.Equal(t, tt.before, tt.d1.Before(tt.d2))
+		assert.Equal(t, tt.after, tt.d1.After(tt.d2))
+		assert.Equal(t, !tt.before && !tt.after, tt.d1.Equal(tt.d2))
 	}
 }
 
