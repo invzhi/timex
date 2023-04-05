@@ -15,10 +15,6 @@ type Date struct {
 
 // NewDate returns the date corresponding to year, month, and day.
 func NewDate(year, month, day int) (Date, error) {
-	if year < 0 || year > 9999 {
-		return Date{}, errors.New("year is out of range [0,9999]")
-	}
-
 	if month < 1 || month > 12 {
 		return Date{}, errors.New("month is out of range [1,12]")
 	}

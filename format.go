@@ -80,45 +80,77 @@ func match(s1, s2 string) bool {
 	return true
 }
 
+// searchName reports whether the prefix of value exist in names.
+// It returns the index and left string.
 func searchName(names []string, value string) (int, string, bool) {
 	for i, name := range names {
 		if len(value) >= len(name) && match(value[:len(name)], name) {
-			return i + 1, value[len(name):], true
+			return i, value[len(name):], true
 		}
 	}
-	return 0, value, false
+	return -1, value, false
 }
 
-// atoi converts string to integer.
-func atoi(s string) (int, bool) {
-	var n int
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c < '0' || c > '9' {
-			return 0, false
-		}
-
-		n = n*10 + int(c-'0')
+// atoi converts a string to integer with min and max digit length.
+func atoi(s string, min, max int) (int, string, bool) {
+	var negative bool
+	if len(s) > 0 && (s[0] == '-' || s[0] == '+') {
+		negative = s[0] == '-'
+		s = s[1:]
 	}
-	return n, true
-}
 
-// prefixNumber converts string prefix to integer with max length.
-func prefixNumber(s string, max int) (int, string, bool) {
-	var n int
-	i := 0
-	for ; i < len(s) && i < max; i++ {
-		c := s[i]
+	var n, index int
+	for ; index < len(s) && index < max; index++ {
+		c := s[index]
 		if c < '0' || c > '9' {
 			break
 		}
 
 		n = n*10 + int(c-'0')
 	}
-	if i == 0 {
+	if index < min {
 		return 0, "", false
 	}
-	return n, s[i:], true
+
+	if negative {
+		n = -n
+	}
+
+	return n, s[index:], true
+}
+
+// appendInt appends the decimal form of integer with specified digit width.
+// If specified digit width is zero, the original form of integer will be followed.
+func appendInt(b []byte, n int, width int) []byte {
+	if n < 0 {
+		b = append(b, '-')
+		n = -n
+	}
+
+	if width == 0 {
+		if n == 0 {
+			width = 1
+		}
+		for i := n; i > 0; i /= 10 {
+			width++
+		}
+	}
+
+	if len(b)+width <= cap(b) {
+		b = b[:len(b)+width]
+	} else {
+		b = append(b, make([]byte, width)...)
+	}
+
+	for i := 0; i < width; i++ {
+		index := len(b) - 1 - i
+
+		next := n / 10
+		b[index] = byte(n-next*10) + '0'
+		n = next
+	}
+
+	return b
 }
 
 func nextToken(layout string) (prefix string, token int, suffix string) {
@@ -187,26 +219,28 @@ func ParseDate(layout, value string) (Date, error) {
 
 		switch token {
 		case tokenYearTwoDigit:
-			year, ok = atoi(value[:2])
-			year += 2000
-			value = value[2:]
+			year, value, ok = atoi(value, 2, 2)
+			if year >= 69 {
+				year += 1900
+			} else {
+				year += 2000
+			}
 		case tokenYearFourDigit:
-			year, ok = atoi(value[:4])
-			value = value[4:]
+			year, value, ok = atoi(value, 4, 4)
 		case tokenMonth:
-			month, value, ok = prefixNumber(value, 2)
+			month, value, ok = atoi(value, 1, 2)
 		case tokenMonthTwoDigit:
-			month, ok = atoi(value[:2])
-			value = value[2:]
+			month, value, ok = atoi(value, 2, 2)
 		case tokenMonthShortName:
 			month, value, ok = searchName(monthShortNames, value)
+			month++
 		case tokenMonthLongName:
 			month, value, ok = searchName(monthLongNames, value)
+			month++
 		case tokenDayOfMonth:
-			day, value, ok = prefixNumber(value, 2)
+			day, value, ok = atoi(value, 1, 2)
 		case tokenDayOfMonthTwoDigit:
-			day, ok = atoi(value[:2])
-			value = value[2:]
+			day, value, ok = atoi(value, 2, 2)
 		}
 
 		if !ok {
@@ -215,4 +249,49 @@ func ParseDate(layout, value string) (Date, error) {
 	}
 
 	return NewDate(year, month, day)
+}
+
+// Format returns a textual representation of the date.
+//
+//	YY       01             Two-digit year
+//	YYYY   2001             Four-digit year
+//	M      1-12             Month, beginning at 1
+//	MM    01-12             Month, 2-digits
+//	MMM   Jan-Dec           The abbreviated month name
+//	MMMM  January-December  The full month name
+//	D      1-31             Day of month
+//	DD    01-31             Day of month, 2-digits
+func (d Date) Format(layout string) string {
+	bytes := make([]byte, 0, len(layout)+10)
+
+	for {
+		prefix, token, suffix := nextToken(layout)
+		bytes = append(bytes, prefix...)
+		if token == 0 {
+			break
+		}
+
+		layout = suffix
+
+		switch token {
+		case tokenYearTwoDigit:
+			bytes = appendInt(bytes, d.year, 2)
+		case tokenYearFourDigit:
+			bytes = appendInt(bytes, d.year, 4)
+		case tokenMonth:
+			bytes = appendInt(bytes, d.month, 0)
+		case tokenMonthTwoDigit:
+			bytes = appendInt(bytes, d.month, 2)
+		case tokenMonthShortName:
+			bytes = append(bytes, monthShortNames[d.month-1]...)
+		case tokenMonthLongName:
+			bytes = append(bytes, monthLongNames[d.month-1]...)
+		case tokenDayOfMonth:
+			bytes = appendInt(bytes, d.day, 0)
+		case tokenDayOfMonthTwoDigit:
+			bytes = appendInt(bytes, d.day, 2)
+		}
+	}
+
+	return string(bytes)
 }

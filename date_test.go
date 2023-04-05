@@ -12,8 +12,6 @@ func TestNewDateErrors(t *testing.T) {
 		year, month, day int
 		errString        string
 	}{
-		{-1, 1, 1, "year is out of range [0,9999]"},
-		{10000, 1, 1, "year is out of range [0,9999]"},
 		{2000, -1, 1, "month is out of range [1,12]"},
 		{2000, 0, 1, "month is out of range [1,12]"},
 		{2000, 13, 1, "month is out of range [1,12]"},
