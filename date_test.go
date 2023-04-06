@@ -7,6 +7,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLeapYear(t *testing.T) {
+	for year := -10000; year <= 10000; year++ {
+		days := ordinalDayBeforeYear(year+1) - ordinalDayBeforeYear(year)
+
+		if isLeap(year) {
+			assert.Equal(t, 366, days)
+		} else {
+			assert.Equal(t, 365, days)
+		}
+	}
+}
+
+func TestOrdinalDay(t *testing.T) {
+	assert.Equal(t, 0, ordinalDay(0, 12, 31))
+
+	d1, err := NewDate(0, 12, 31)
+	assert.NoError(t, err)
+	d2, err := NewDate(0, 12, 31)
+	assert.NoError(t, err)
+
+	for day := 1; day < 3650000; day++ {
+		d1 = d1.Add(0, 0, 1)
+		d2 = d2.Add(0, 0, -1)
+
+		assert.Equal(t, day, ordinalDay(d1.year, d1.month, d1.day))
+		assert.Equal(t, -day, ordinalDay(d2.year, d2.month, d2.day))
+	}
+}
+
 func TestNewDateErrors(t *testing.T) {
 	tests := []struct {
 		year, month, day int
@@ -32,8 +61,8 @@ func TestNewDateErrors(t *testing.T) {
 }
 
 func TestDateFromTime(t *testing.T) {
-	tt := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
-	for i := 0; tt.Year() < 10000; i++ {
+	tt := time.Date(-10000, 1, 1, 0, 0, 0, 0, time.UTC)
+	for tt.Year() < 10001 {
 		date := DateFromTime(tt)
 		assert.Equal(t, tt.Year(), date.Year())
 		assert.Equal(t, int(tt.Month()), date.Month())
@@ -231,6 +260,7 @@ func TestDateAdd(t *testing.T) {
 		{3, 16, 1},
 		{3, 15, 30},
 		{5, -6, -18 - 30 - 12},
+		{5, -5, -18 - 31 - 30 - 12},
 	}
 
 	d1, err := NewDate(2011, 11, 18)

@@ -73,8 +73,11 @@ func (d Date) DayOfYear() int {
 
 // Weekday returns the day of week specified by d.
 func (d Date) Weekday() time.Weekday {
-	days := daysBeforeYear(d.year) + daysBeforeMonth(d.year, d.month) + d.day
-	return time.Weekday(days % 7)
+	weekday := ordinalDay(d.year, d.month, d.day) % 7
+	if weekday < 0 {
+		weekday += 7
+	}
+	return time.Weekday(weekday)
 }
 
 // ISOWeek returns the ISO 8601 year and week number specified by d.
@@ -88,14 +91,17 @@ func (d Date) ISOWeek() (year, week int) {
 	return thursday.year, (thursday.DayOfYear()-1)/7 + 1
 }
 
+// norm normalize the hi and lo into [1, base].
 func norm(hi, lo, base int) (int, int) {
 	if lo < 1 {
-		lo += base
-		hi--
+		n := -(lo/base - 1)
+		lo += n * base
+		hi -= n
 	}
 	if lo > base {
-		lo -= base
-		hi++
+		n := (lo - 1) / base
+		lo -= n * base
+		hi += n
 	}
 	return hi, lo
 }
@@ -108,16 +114,18 @@ func (d Date) Add(years, months, days int) Date {
 		day   = d.day + days
 	)
 
-	for month < 1 || month > 12 {
-		year, month = norm(year, month, 12)
+	year, month = norm(year, month, 12)
+
+	for day < 1 {
+		year, month = norm(year, month-1, 12)
+		day += daysInMonth(year, month)
 	}
 
 	n := daysInMonth(year, month)
-	for day < 1 || day > n {
-		month, day = norm(month, day, n)
-		if month < 1 || month > 12 {
-			year, month = norm(year, month, 12)
-		}
+	for day > n {
+		day -= n
+		year, month = norm(year, month+1, 12)
+
 		n = daysInMonth(year, month)
 	}
 
@@ -171,15 +179,37 @@ func daysInMonth(year, month int) int {
 	return int(daysInYear[month] - daysInYear[month-1])
 }
 
-func daysBeforeYear(year int) int {
-	y := year - 1
-	return y*365 + y/4 - y/100 + y/400
+// ordinalDayBeforeYear returns the ordinal day of last year's last day.
+// Day 1 is Jan 1 of year 1.
+func ordinalDayBeforeYear(year int) int {
+	// If year is 5, delta reach 1; year is -4, delta reach -1.
+	y := year
+	if year > 0 {
+		y--
+	}
+
+	delta := y/4 - y/100 + y/400
+	// Handle year 0, it is a leap year.
+	if year <= 0 {
+		delta--
+	}
+	return (year-1)*365 + delta
 }
 
+// daysBeforeMonth returns the number of days in the year before month.
 func daysBeforeMonth(year, month int) int {
 	days := int(daysInYear[month-1])
 	if month > 2 && isLeap(year) {
 		days++
 	}
 	return days
+}
+
+// ordinalDay returns the ordinal day of the specified date.
+// Day 1 is Jan 1 of year 1.
+func ordinalDay(year, month, day int) int {
+	n := ordinalDayBeforeYear(year)
+	n += daysBeforeMonth(year, month)
+	n += day
+	return n
 }
