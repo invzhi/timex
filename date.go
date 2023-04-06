@@ -182,16 +182,13 @@ func daysInMonth(year, month int) int {
 // ordinalDayBeforeYear returns the ordinal day of last year's last day.
 // Day 1 is Jan 1 of year 1.
 func ordinalDayBeforeYear(year int) int {
-	// If year is 5, delta reach 1; year is -4, delta reach -1.
-	y := year
+	var delta int
 	if year > 0 {
-		y--
-	}
-
-	delta := y/4 - y/100 + y/400
-	// Handle year 0, it is a leap year.
-	if year <= 0 {
-		delta--
+		y := year - 1 // If year is 5, delta reach 1.
+		delta = y/4 - y/100 + y/400
+	} else {
+		y := year                       // If year is -4, delta reach -1.
+		delta = y/4 - y/100 + y/400 - 1 // Handle year 0, it is a leap year.
 	}
 	return (year-1)*365 + delta
 }
