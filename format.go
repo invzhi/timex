@@ -262,6 +262,7 @@ func ParseDate(layout, value string) (Date, error) {
 //	D      1-31             Day of month
 //	DD    01-31             Day of month, 2-digits
 func (d Date) Format(layout string) string {
+	year, month, day := fromOrdinal(d.ordinal)
 	bytes := make([]byte, 0, len(layout)+10)
 
 	for {
@@ -275,23 +276,47 @@ func (d Date) Format(layout string) string {
 
 		switch token {
 		case tokenYearTwoDigit:
-			bytes = appendInt(bytes, d.year, 2)
+			bytes = appendInt(bytes, year, 2)
 		case tokenYearFourDigit:
-			bytes = appendInt(bytes, d.year, 4)
+			bytes = appendInt(bytes, year, 4)
 		case tokenMonth:
-			bytes = appendInt(bytes, d.month, 0)
+			bytes = appendInt(bytes, month, 0)
 		case tokenMonthTwoDigit:
-			bytes = appendInt(bytes, d.month, 2)
+			bytes = appendInt(bytes, month, 2)
 		case tokenMonthShortName:
-			bytes = append(bytes, monthShortNames[d.month-1]...)
+			bytes = append(bytes, monthShortNames[month-1]...)
 		case tokenMonthLongName:
-			bytes = append(bytes, monthLongNames[d.month-1]...)
+			bytes = append(bytes, monthLongNames[month-1]...)
 		case tokenDayOfMonth:
-			bytes = appendInt(bytes, d.day, 0)
+			bytes = appendInt(bytes, day, 0)
 		case tokenDayOfMonthTwoDigit:
-			bytes = appendInt(bytes, d.day, 2)
+			bytes = appendInt(bytes, day, 2)
 		}
 	}
+
+	return string(bytes)
+}
+
+// String returns the textual representation of the date.
+func (d Date) String() string {
+	return d.Format(RFC3339)
+}
+
+// GoString returns the Go syntax of the date.
+func (d Date) GoString() string {
+	year, month, day := fromOrdinal(d.ordinal)
+
+	bytes := make([]byte, 0, 32)
+
+	bytes = append(bytes, "timex.MustNewDate("...)
+	bytes = appendInt(bytes, year, 0)
+
+	bytes = append(bytes, ", "...)
+	bytes = appendInt(bytes, month, 0)
+
+	bytes = append(bytes, ", "...)
+	bytes = appendInt(bytes, day, 0)
+	bytes = append(bytes, ')')
 
 	return string(bytes)
 }

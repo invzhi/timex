@@ -9,7 +9,7 @@ import (
 
 func TestLeapYear(t *testing.T) {
 	for year := -10000; year <= 10000; year++ {
-		days := ordinalDayBeforeYear(year+1) - ordinalDayBeforeYear(year)
+		days := ordinalBeforeYear(year+1) - ordinalBeforeYear(year)
 
 		if isLeap(year) {
 			assert.Equal(t, 366, days)
@@ -19,20 +19,167 @@ func TestLeapYear(t *testing.T) {
 	}
 }
 
-func TestOrdinalDay(t *testing.T) {
-	assert.Equal(t, 0, ordinalDay(0, 12, 31))
+func TestDaysInMonth(t *testing.T) {
+	tests := []struct {
+		year, month int
+		days        int
+	}{
+		{-1, 1, 31},
+		{-1, 2, 28}, // Non-leap year
+		{-1, 3, 31},
+		{-1, 4, 30},
+		{-1, 5, 31},
+		{-1, 6, 30},
+		{-1, 7, 31},
+		{-1, 8, 31},
+		{-1, 9, 30},
+		{-1, 10, 31},
+		{-1, 11, 30},
+		{-1, 12, 31},
+		{0, 1, 31},
+		{0, 2, 29}, // Leap year
+		{0, 3, 31},
+		{0, 4, 30},
+		{0, 5, 31},
+		{0, 6, 30},
+		{0, 7, 31},
+		{0, 8, 31},
+		{0, 9, 30},
+		{0, 10, 31},
+		{0, 11, 30},
+		{0, 12, 31},
+		{1, 1, 31},
+		{1, 2, 28}, // Non-leap year
+		{1, 3, 31},
+		{1, 4, 30},
+		{1, 5, 31},
+		{1, 6, 30},
+		{1, 7, 31},
+		{1, 8, 31},
+		{1, 9, 30},
+		{1, 10, 31},
+		{1, 11, 30},
+		{1, 12, 31},
+		{4, 1, 31},
+		{4, 2, 29}, // Leap year
+		{4, 3, 31},
+		{4, 4, 30},
+		{4, 5, 31},
+		{4, 6, 30},
+		{4, 7, 31},
+		{4, 8, 31},
+		{4, 9, 30},
+		{4, 10, 31},
+		{4, 11, 30},
+		{4, 12, 31},
+	}
 
-	d1, err := NewDate(0, 12, 31)
-	assert.NoError(t, err)
-	d2, err := NewDate(0, 12, 31)
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		days := daysInMonth(tt.year, tt.month)
+		assert.Equal(t, tt.days, days)
+	}
+}
 
-	for day := 1; day < 3650000; day++ {
-		d1 = d1.Add(0, 0, 1)
-		d2 = d2.Add(0, 0, -1)
+func TestOrdinalBeforeYear(t *testing.T) {
+	assert.Equal(t, 365*400+97, daysEvery400Years)
+	assert.Equal(t, 365*100+24, daysEvery100Years)
+	assert.Equal(t, 365*4+1, daysEvery4Years)
 
-		assert.Equal(t, day, ordinalDay(d1.year, d1.month, d1.day))
-		assert.Equal(t, -day, ordinalDay(d2.year, d2.month, d2.day))
+	assert.Equal(t, -366, ordinalBeforeYear(0))
+	assert.Equal(t, 0, ordinalBeforeYear(1))
+	assert.Equal(t, 365, ordinalBeforeYear(2))
+
+	// Days in positive years and negative years should be equal.
+	for year := 1; year < 10000; year++ {
+		daysInPositiveYears := ordinalBeforeYear(year)
+		daysInNegativeYears := ordinalBeforeYear(0) - ordinalBeforeYear(-year+1)
+
+		assert.Equal(t, daysInPositiveYears, daysInNegativeYears)
+	}
+
+	// Returned ordinal day should be the last day of last year.
+	for year := 1; year < 10000; year++ {
+		n := ordinalBeforeYear(year)
+		y1, _, _ := fromOrdinal(n)
+		y2, _, _ := fromOrdinal(n + 1)
+		assert.Equal(t, year-1, y1)
+		assert.Equal(t, year, y2)
+	}
+}
+
+func TestOrdinalFromTo(t *testing.T) {
+	assert.Equal(t, 0, toOrdinal(0, 12, 31))
+	assert.Equal(t, 1, toOrdinal(1, 1, 1))
+
+	for n := -3650000; n <= 3650000; n++ {
+		year, month, day := fromOrdinal(n)
+
+		assert.GreaterOrEqual(t, month, 1)
+		assert.LessOrEqual(t, month, 12)
+
+		assert.GreaterOrEqual(t, day, 1)
+		assert.LessOrEqual(t, day, daysInMonth(year, month))
+
+		assert.Equal(t, n, toOrdinal(year, month, day))
+	}
+}
+
+func TestDateFromTime(t *testing.T) {
+	tests := []struct {
+		year, month, day int
+	}{
+		{-1, 1, 1},
+		{0, 1, 1},
+		{0, 12, 31},
+		{1, 1, 1},
+		{2006, 1, 2},
+	}
+
+	for _, tt := range tests {
+		dateTime := time.Date(tt.year, time.Month(tt.month), tt.day, 0, 0, 0, 0, time.UTC)
+		date := DateFromTime(dateTime)
+
+		assert.Equal(t, tt.year, date.Year())
+		assert.Equal(t, tt.month, date.Month())
+		assert.Equal(t, tt.day, date.Day())
+
+		assert.Equal(t, dateTime, date.Time(time.UTC))
+	}
+
+	t.Run("Today", func(t *testing.T) {
+		now := time.Now()
+		date := Today(time.UTC)
+
+		assert.Equal(t, now.Year(), date.Year())
+		assert.Equal(t, now.YearDay(), date.DayOfYear())
+	})
+}
+
+func TestDateFromOrdinal(t *testing.T) {
+	for n := -3650000; n <= 3650000; n++ {
+		year, month, day := DateFromOrdinal(n).Date()
+		assert.Equal(t, n, MustNewDate(year, month, day).Ordinal())
+	}
+}
+
+func TestDateOrdinalDate(t *testing.T) {
+	for year := -10000; year <= 10000; year++ {
+		days := 365
+		if isLeap(year) {
+			days = 366
+		}
+		for dayOfYear := 1; dayOfYear <= days; dayOfYear++ {
+			{
+				y, m, d := fromOrdinalDate(year, dayOfYear)
+				y, yearDay := MustNewDate(y, m, d).OrdinalDate()
+				assert.Equal(t, year, y)
+				assert.Equal(t, dayOfYear, yearDay)
+			}
+			{
+				n := ordinalBeforeYear(year) + dayOfYear
+				assert.Equal(t, dayOfYear, DateFromOrdinal(n).DayOfYear())
+			}
+		}
 	}
 }
 
@@ -60,43 +207,25 @@ func TestNewDateErrors(t *testing.T) {
 	}
 }
 
-func TestDateFromTime(t *testing.T) {
-	tt := time.Date(-10000, 1, 1, 0, 0, 0, 0, time.UTC)
-	for tt.Year() < 10001 {
-		date := DateFromTime(tt)
-		assert.Equal(t, tt.Year(), date.Year())
-		assert.Equal(t, int(tt.Month()), date.Month())
-		assert.Equal(t, tt.Day(), date.Day())
-		assert.Equal(t, tt.YearDay(), date.DayOfYear())
-		assert.Equal(t, tt.Weekday(), date.Weekday())
+func TestDateWeekday(t *testing.T) {
+	// January 1 of year 1 is monday.
+	n := 1
+	for weekday := time.Monday; n <= 3650000; weekday++ {
+		if weekday > time.Saturday {
+			weekday = time.Sunday
+		}
+		assert.Equal(t, weekday, DateFromOrdinal(n).Weekday())
 
-		tt = tt.AddDate(0, 0, 1)
+		n++
 	}
-}
+	n = 1
+	for weekday := time.Monday; n >= -3650000; weekday-- {
+		if weekday < time.Sunday {
+			weekday = time.Saturday
+		}
+		assert.Equal(t, weekday, DateFromOrdinal(n).Weekday())
 
-func TestDateQuarter(t *testing.T) {
-	tests := []struct {
-		month   int
-		quarter int
-	}{
-		{1, 1},
-		{2, 1},
-		{3, 1},
-		{4, 2},
-		{5, 2},
-		{6, 2},
-		{7, 3},
-		{8, 3},
-		{9, 3},
-		{10, 4},
-		{11, 4},
-		{12, 4},
-	}
-	for _, tt := range tests {
-		date, err := NewDate(2000, tt.month, 1)
-		assert.NoError(t, err)
-
-		assert.Equal(t, tt.quarter, date.Quarter())
+		n--
 	}
 }
 
@@ -228,6 +357,80 @@ func TestDateISOWeek(t *testing.T) {
 	}
 }
 
+func TestDateQuarter(t *testing.T) {
+	tests := []struct {
+		month   int
+		quarter int
+	}{
+		{1, 1},
+		{2, 1},
+		{3, 1},
+		{4, 2},
+		{5, 2},
+		{6, 2},
+		{7, 3},
+		{8, 3},
+		{9, 3},
+		{10, 4},
+		{11, 4},
+		{12, 4},
+	}
+	for _, tt := range tests {
+		date, err := NewDate(2000, tt.month, 1)
+		assert.NoError(t, err)
+
+		assert.Equal(t, tt.quarter, date.Quarter())
+	}
+}
+
+func TestDateAdd(t *testing.T) {
+	tests := []struct {
+		years, months, days int
+	}{
+		{4, 4, 1},
+		{3, 16, 1},
+		{3, 15, 30},
+		{5, -6, -18 - 30 - 12},
+		{5, -5, -18 - 31 - 30 - 12},
+		{6, -17, -18 - 31 - 30 - 12},
+	}
+
+	d1, err := NewDate(2011, 11, 18)
+	assert.NoError(t, err)
+	d2, err := NewDate(2016, 3, 19)
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		d3 := d1.Add(tt.years, tt.months, tt.days)
+		assert.Equal(t, d2, d3)
+	}
+
+	t.Run("Overflow", func(t *testing.T) {
+		assert.Equal(t,
+			MustNewDate(2001, 3, 1),
+			MustNewDate(2000, 2, 29).Add(1, 0, 0),
+		)
+		assert.Equal(t,
+			MustNewDate(1999, 3, 1),
+			MustNewDate(2000, 2, 29).Add(-1, 0, 0),
+		)
+		assert.Equal(t,
+			MustNewDate(2000, 12, 1),
+			MustNewDate(2000, 10, 31).Add(0, 1, 0),
+		)
+		assert.Equal(t,
+			MustNewDate(2000, 10, 1),
+			MustNewDate(2000, 10, 31).Add(0, -1, 0),
+		)
+	})
+}
+
+func TestDateIsZero(t *testing.T) {
+	assert.True(t, Date{}.IsZero())
+	assert.True(t, DateFromOrdinal(0).IsZero())
+	assert.True(t, MustNewDate(0, 12, 31).IsZero())
+}
+
 func TestDateBeforeAfter(t *testing.T) {
 	tests := []struct {
 		d1, d2        Date
@@ -249,27 +452,5 @@ func TestDateBeforeAfter(t *testing.T) {
 		assert.Equal(t, tt.before, tt.d1.Before(tt.d2))
 		assert.Equal(t, tt.after, tt.d1.After(tt.d2))
 		assert.Equal(t, !tt.before && !tt.after, tt.d1.Equal(tt.d2))
-	}
-}
-
-func TestDateAdd(t *testing.T) {
-	tests := []struct {
-		years, months, days int
-	}{
-		{4, 4, 1},
-		{3, 16, 1},
-		{3, 15, 30},
-		{5, -6, -18 - 30 - 12},
-		{5, -5, -18 - 31 - 30 - 12},
-	}
-
-	d1, err := NewDate(2011, 11, 18)
-	assert.NoError(t, err)
-	d2, err := NewDate(2016, 3, 19)
-	assert.NoError(t, err)
-
-	for _, tt := range tests {
-		d3 := d1.Add(tt.years, tt.months, tt.days)
-		assert.Equal(t, d3, d2)
 	}
 }
