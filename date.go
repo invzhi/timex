@@ -105,7 +105,7 @@ func (d Date) DayOfYear() int {
 
 // Weekday returns the day of week specified by d.
 func (d Date) Weekday() time.Weekday {
-	weekday := d.ordinal % 7
+	weekday := d.ordinal % 7 // Day 1 is monday.
 	if weekday < 0 {
 		weekday += 7
 	}
@@ -120,7 +120,8 @@ func (d Date) ISOWeek() (year, week int) {
 	}
 
 	thursday := d.Add(0, 0, delta)
-	return thursday.Year(), (thursday.DayOfYear()-1)/7 + 1
+	year, dayOfYear := thursday.OrdinalDate()
+	return year, (dayOfYear-1)/7 + 1
 }
 
 // Quarter returns the quarter specified by d.
@@ -146,11 +147,11 @@ func norm(hi, lo, base int) (int, int) {
 
 // Add returns the date corresponding to adding the given number of years, months, and days to d.
 func (d Date) Add(years, months, days int) Date {
-	var (
-		year  = d.Year() + years
-		month = d.Month() + months
-		day   = d.Day() + days
-	)
+	year, month, day := fromOrdinal(d.ordinal)
+
+	year += years
+	month += months
+	day += days
 
 	year, month = norm(year, month, 12)
 	n := ordinalBeforeYear(year)

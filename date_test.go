@@ -7,6 +7,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkDateOrdinalDate(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		date.OrdinalDate()
+	}
+}
+
+func BenchmarkDateDate(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		date.Date()
+	}
+}
+
+func BenchmarkDateWeekday(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		date.Weekday()
+	}
+}
+
+func BenchmarkDateISOWeek(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		date.ISOWeek()
+	}
+}
+
+func BenchmarkDateQuarter(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		date.Quarter()
+	}
+}
+
+func BenchmarkDateAdd(b *testing.B) {
+	var date Date
+	for i := 0; i < b.N; i++ {
+		date.Add(10, 100, 3650000)
+	}
+}
+
 func TestLeapYear(t *testing.T) {
 	for year := -10000; year <= 10000; year++ {
 		days := ordinalBeforeYear(year+1) - ordinalBeforeYear(year)
