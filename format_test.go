@@ -6,6 +6,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkDateParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = ParseDate("YYYY-MM-DD", "2006-01-02")
+	}
+}
+
+func BenchmarkDateFormat(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		_ = date.Format(RFC3339)
+	}
+}
+
+func BenchmarkDateString(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		_ = date.String()
+	}
+}
+
+func BenchmarkDateGoString(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		_ = date.GoString()
+	}
+}
+
+func BenchmarkDateMarshalJSON(b *testing.B) {
+	date := MustNewDate(2006, 1, 2)
+	for i := 0; i < b.N; i++ {
+		_, _ = date.MarshalJSON()
+	}
+}
+
 func TestAppendInt(t *testing.T) {
 	tests := []struct {
 		n     int
@@ -79,8 +113,6 @@ func TestParseDate(t *testing.T) {
 		dates := []Date{
 			MustNewDate(2010, 2, 4),
 			MustNewDate(1990, 2, 4), // Nineties year
-			// MustNewDate(0, 2, 4),    // Zero year
-			// MustNewDate(-123, 2, 4), // Negative year
 		}
 
 		for _, tt := range tests {
@@ -129,6 +161,56 @@ func TestParseDateErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		_, err := ParseDate(tt.layout, tt.value)
+		assert.EqualError(t, err, tt.errString)
+	}
+}
+
+func TestDateString(t *testing.T) {
+	tests := []struct {
+		year, month, day int
+		str, goStr       string
+	}{
+		{2006, 1, 2, "2006-01-02", "timex.MustNewDate(2006, 1, 2)"},
+		{1, 12, 11, "0001-12-11", "timex.MustNewDate(1, 12, 11)"},
+		{0, 1, 2, "0000-01-02", "timex.MustNewDate(0, 1, 2)"},
+		{-2000, 1, 2, "-2000-01-02", "timex.MustNewDate(-2000, 1, 2)"},
+		{10001, 1, 2, "0001-01-02", "timex.MustNewDate(10001, 1, 2)"},
+		{-10001, 1, 2, "-0001-01-02", "timex.MustNewDate(-10001, 1, 2)"},
+	}
+
+	for _, tt := range tests {
+		date := MustNewDate(tt.year, tt.month, tt.day)
+		assert.Equal(t, tt.str, date.String())
+		assert.Equal(t, tt.goStr, date.GoString())
+	}
+}
+
+func TestDateMarshalJSON(t *testing.T) {
+	d1 := MustNewDate(2006, 1, 2)
+	bytes, err := d1.MarshalJSON()
+	assert.NoError(t, err)
+
+	var d2 Date
+	err = d2.UnmarshalJSON(bytes)
+	assert.NoError(t, err)
+
+	assert.Equal(t, d1, d2)
+}
+
+func TestDateMarshalJSONError(t *testing.T) {
+	tests := []struct {
+		year, month, day int
+		errString        string
+	}{
+		{-1, 1, 2, "year is out of range [0,9999]"},
+		{-102, 1, 2, "year is out of range [0,9999]"},
+		{-1000, 1, 2, "year is out of range [0,9999]"},
+		{10000, 1, 2, "year is out of range [0,9999]"},
+		{10200, 1, 2, "year is out of range [0,9999]"},
+	}
+	for _, tt := range tests {
+		date := MustNewDate(tt.year, tt.month, tt.day)
+		_, err := date.MarshalJSON()
 		assert.EqualError(t, err, tt.errString)
 	}
 }

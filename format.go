@@ -1,6 +1,7 @@
 package timex
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -251,17 +252,21 @@ func ParseDate(layout, value string) (Date, error) {
 	return NewDate(year, month, day)
 }
 
-// Format returns a textual representation of the date.
-//
-//	YY       01             Two-digit year
-//	YYYY   2001             Four-digit year
-//	M      1-12             Month, beginning at 1
-//	MM    01-12             Month, 2-digits
-//	MMM   Jan-Dec           The abbreviated month name
-//	MMMM  January-December  The full month name
-//	D      1-31             Day of month
-//	DD    01-31             Day of month, 2-digits
-func (d Date) Format(layout string) string {
+func (d Date) appendRFC3339(b []byte) ([]byte, error) {
+	year, month, day := fromOrdinal(d.ordinal)
+	if year < 0 || year > 9999 {
+		return nil, errors.New("year is out of range [0,9999]")
+	}
+
+	b = appendInt(b, year, 4)
+	b = append(b, '-')
+	b = appendInt(b, month, 2)
+	b = append(b, '-')
+	b = appendInt(b, day, 2)
+	return b, nil
+}
+
+func (d Date) format(layout string) string {
 	year, month, day := fromOrdinal(d.ordinal)
 	bytes := make([]byte, 0, len(layout)+10)
 
@@ -297,6 +302,27 @@ func (d Date) Format(layout string) string {
 	return string(bytes)
 }
 
+// Format returns a textual representation of the date.
+//
+//	YY       01             Two-digit year
+//	YYYY   2001             Four-digit year
+//	M      1-12             Month, beginning at 1
+//	MM    01-12             Month, 2-digits
+//	MMM   Jan-Dec           The abbreviated month name
+//	MMMM  January-December  The full month name
+//	D      1-31             Day of month
+//	DD    01-31             Day of month, 2-digits
+func (d Date) Format(layout string) string {
+	if layout == RFC3339 {
+		b := make([]byte, 0, len(RFC3339))
+		b, err := d.appendRFC3339(b)
+		if err == nil {
+			return string(b)
+		}
+	}
+	return d.format(layout)
+}
+
 // String returns the textual representation of the date.
 func (d Date) String() string {
 	return d.Format(RFC3339)
@@ -319,4 +345,29 @@ func (d Date) GoString() string {
 	bytes = append(bytes, ')')
 
 	return string(bytes)
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// The date is a quoted string in RFC 3339 format.
+func (d Date) MarshalJSON() ([]byte, error) {
+	b := make([]byte, 0, len(RFC3339)+2)
+	b = append(b, '"')
+	b, err := d.appendRFC3339(b)
+	if err != nil {
+		return nil, err
+	}
+	b = append(b, '"')
+	return b, nil
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// The date is expected to be a quoted string in RFC 3339 format.
+func (d *Date) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+
+	var err error
+	*d, err = ParseDate(`"`+RFC3339+`"`, string(data))
+	return err
 }
