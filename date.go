@@ -8,11 +8,11 @@ import (
 
 // Date represents a date.
 //
-// The zero value of type Date is December 31 of year 0.
+// The zero value of type Date is January 1 of year 1.
 //
 // swagger:strfmt date
 type Date struct {
-	ordinal int
+	ordinal int // ordinal represents days since January 1 of year 1.
 }
 
 // NewDate returns the date corresponding to year, month, and day.
@@ -38,11 +38,6 @@ func MustNewDate(year, month, day int) Date {
 	return date
 }
 
-// DateFromOrdinal returns the date specified by proleptic Gregorian ordinal.
-func DateFromOrdinal(n int) Date {
-	return Date{ordinal: n}
-}
-
 // DateFromTime returns the date specified by t.
 func DateFromTime(t time.Time) Date {
 	year, month, day := t.Date()
@@ -60,11 +55,6 @@ func Today(location *time.Location) Date {
 func (d Date) Time(location *time.Location) time.Time {
 	year, month, day := fromOrdinal(d.ordinal)
 	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, location)
-}
-
-// Ordinal returns the proleptic Gregorian ordinal specified by d.
-func (d Date) Ordinal() int {
-	return d.ordinal
 }
 
 // OrdinalDate returns the ordinal date specified by d.
@@ -105,7 +95,7 @@ func (d Date) DayOfYear() int {
 
 // Weekday returns the day of week specified by d.
 func (d Date) Weekday() time.Weekday {
-	weekday := d.ordinal % 7 // Day 1 is monday.
+	weekday := (d.ordinal + 1) % 7 // Day 0 is monday.
 	if weekday < 0 {
 		weekday += 7
 	}
@@ -161,7 +151,7 @@ func (d Date) Add(years, months, days int) Date {
 	return Date{ordinal: n}
 }
 
-// IsZero reports whether the date d is the zero of proleptic Gregorian ordinal, December 31 of year 0.
+// IsZero reports whether the date d is the zero value, January 1 of year 1.
 func (d Date) IsZero() bool {
 	return d.ordinal == 0
 }
@@ -220,13 +210,13 @@ func daysBeforeMonth(year, month int) int {
 }
 
 var (
-	daysEvery400Years = ordinalBeforeYear(401)
-	daysEvery100Years = ordinalBeforeYear(101)
-	daysEvery4Years   = ordinalBeforeYear(5)
+	daysEvery400Years = ordinalBeforeYear(401) + 1
+	daysEvery100Years = ordinalBeforeYear(101) + 1
+	daysEvery4Years   = ordinalBeforeYear(5) + 1
 )
 
-// ordinalBeforeYear returns the proleptic Gregorian ordinal of last year's last day.
-// Ordinal day 1 is January 1 of year 1.
+// ordinalBeforeYear returns the ordinal of last year's last day.
+// Ordinal day 0 is January 1 of year 1.
 func ordinalBeforeYear(year int) int {
 	var delta int
 	if year > 0 {
@@ -236,13 +226,33 @@ func ordinalBeforeYear(year int) int {
 		y := year                       // If year is -4, delta reach -1.
 		delta = y/4 - y/100 + y/400 - 1 // Handle year 0, it is a leap year.
 	}
-	return (year-1)*365 + delta
+	return (year-1)*365 + delta - 1 // Shift for January 1 of year 1.
 }
 
-// fromOrdinal returns the date of the specified proleptic Gregorian ordinal.
-// Ordinal day 1 is January 1 of year 1.
+// fromOrdinalDate returns the date of the specified ordinal date.
+func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
+	min, max := 1, 12
+	for min < max {
+		m := max - (max-min)/2
+		n := daysBeforeMonth(year, m)
+		switch {
+		case n < dayOfYear:
+			min = m
+		case n > dayOfYear:
+			max = m - 1
+		default:
+			min, max = m-1, m-1
+		}
+	}
+	month := min
+	day := dayOfYear - daysBeforeMonth(year, month)
+	return year, month, day
+}
+
+// fromOrdinal returns the date of the specified ordinal.
+// Ordinal day 0 is January 1 of year 1.
 func fromOrdinal(n int) (year, month, day int) {
-	n400, n := norm(0, n, daysEvery400Years)
+	n400, n := norm(0, n+1, daysEvery400Years) // Shift for January 1 of year 1.
 	year += n400 * 400
 	// A leap day is added every 400 years, n100 will be increased incorrectly unless make a judgement here.
 	if n == daysEvery400Years {
@@ -266,28 +276,8 @@ func fromOrdinal(n int) (year, month, day int) {
 	return fromOrdinalDate(year, n)
 }
 
-// fromOrdinalDate returns the date of the specified ordinal date.
-func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
-	min, max := 1, 12
-	for min < max {
-		m := max - (max-min)/2
-		n := daysBeforeMonth(year, m)
-		switch {
-		case n < dayOfYear:
-			min = m
-		case n > dayOfYear:
-			max = m - 1
-		default:
-			min, max = m-1, m-1
-		}
-	}
-	month := min
-	day := dayOfYear - daysBeforeMonth(year, month)
-	return year, month, day
-}
-
-// toOrdinal returns the proleptic Gregorian ordinal of the specified date.
-// January 1 of year 1 is ordinal day 1.
+// toOrdinal returns the ordinal of the specified date.
+// January 1 of year 1 is ordinal day 0.
 func toOrdinal(year, month, day int) int {
 	n := ordinalBeforeYear(year)
 	n += daysBeforeMonth(year, month)

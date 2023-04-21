@@ -28,6 +28,8 @@ func (d Date) Value() (driver.Value, error) {
 
 // NullDate represents a Date that may be null.
 // NullDate implements the sql.Scanner interface, so it can be used as a scan destination, similar to sql.NullString.
+//
+// swagger:strfmt date
 type NullDate struct {
 	Date  Date
 	Valid bool // Valid is true if Date is not NULL

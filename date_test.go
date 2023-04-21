@@ -127,13 +127,13 @@ func TestOrdinalBeforeYear(t *testing.T) {
 	assert.Equal(t, 365*100+24, daysEvery100Years)
 	assert.Equal(t, 365*4+1, daysEvery4Years)
 
-	assert.Equal(t, -366, ordinalBeforeYear(0))
-	assert.Equal(t, 0, ordinalBeforeYear(1))
-	assert.Equal(t, 365, ordinalBeforeYear(2))
+	assert.Equal(t, -367, ordinalBeforeYear(0))
+	assert.Equal(t, -1, ordinalBeforeYear(1))
+	assert.Equal(t, 364, ordinalBeforeYear(2))
 
 	// Days in positive years and negative years should be equal.
 	for year := 1; year < 10000; year++ {
-		daysInPositiveYears := ordinalBeforeYear(year)
+		daysInPositiveYears := ordinalBeforeYear(year) + 1
 		daysInNegativeYears := ordinalBeforeYear(0) - ordinalBeforeYear(-year+1)
 
 		assert.Equal(t, daysInPositiveYears, daysInNegativeYears)
@@ -150,8 +150,9 @@ func TestOrdinalBeforeYear(t *testing.T) {
 }
 
 func TestOrdinalFromTo(t *testing.T) {
-	assert.Equal(t, 0, toOrdinal(0, 12, 31))
-	assert.Equal(t, 1, toOrdinal(1, 1, 1))
+	assert.Equal(t, -1, toOrdinal(0, 12, 31))
+	assert.Equal(t, 0, toOrdinal(1, 1, 1))
+	assert.Equal(t, 1, toOrdinal(1, 1, 2))
 
 	for n := -3650000; n <= 3650000; n++ {
 		year, month, day := fromOrdinal(n)
@@ -181,9 +182,10 @@ func TestDateFromTime(t *testing.T) {
 		dateTime := time.Date(tt.year, time.Month(tt.month), tt.day, 0, 0, 0, 0, time.UTC)
 		date := DateFromTime(dateTime)
 
-		assert.Equal(t, tt.year, date.Year())
-		assert.Equal(t, tt.month, date.Month())
-		assert.Equal(t, tt.day, date.Day())
+		year, month, day := date.Date()
+		assert.Equal(t, tt.year, year)
+		assert.Equal(t, tt.month, month)
+		assert.Equal(t, tt.day, day)
 
 		assert.Equal(t, dateTime, date.Time(time.UTC))
 	}
@@ -195,13 +197,6 @@ func TestDateFromTime(t *testing.T) {
 		assert.Equal(t, now.Year(), date.Year())
 		assert.Equal(t, now.YearDay(), date.DayOfYear())
 	})
-}
-
-func TestDateFromOrdinal(t *testing.T) {
-	for n := -3650000; n <= 3650000; n++ {
-		year, month, day := DateFromOrdinal(n).Date()
-		assert.Equal(t, n, MustNewDate(year, month, day).Ordinal())
-	}
 }
 
 func TestDateOrdinalDate(t *testing.T) {
@@ -219,7 +214,7 @@ func TestDateOrdinalDate(t *testing.T) {
 			}
 			{
 				n := ordinalBeforeYear(year) + dayOfYear
-				assert.Equal(t, dayOfYear, DateFromOrdinal(n).DayOfYear())
+				assert.Equal(t, dayOfYear, Date{ordinal: n}.DayOfYear())
 			}
 		}
 	}
@@ -251,21 +246,21 @@ func TestNewDateErrors(t *testing.T) {
 
 func TestDateWeekday(t *testing.T) {
 	// January 1 of year 1 is monday.
-	n := 1
+	n := 0
 	for weekday := time.Monday; n <= 3650000; weekday++ {
 		if weekday > time.Saturday {
 			weekday = time.Sunday
 		}
-		assert.Equal(t, weekday, DateFromOrdinal(n).Weekday())
+		assert.Equal(t, weekday, Date{ordinal: n}.Weekday())
 
 		n++
 	}
-	n = 1
+	n = 0
 	for weekday := time.Monday; n >= -3650000; weekday-- {
 		if weekday < time.Sunday {
 			weekday = time.Saturday
 		}
-		assert.Equal(t, weekday, DateFromOrdinal(n).Weekday())
+		assert.Equal(t, weekday, Date{ordinal: n}.Weekday())
 
 		n--
 	}
@@ -469,8 +464,7 @@ func TestDateAdd(t *testing.T) {
 
 func TestDateIsZero(t *testing.T) {
 	assert.True(t, Date{}.IsZero())
-	assert.True(t, DateFromOrdinal(0).IsZero())
-	assert.True(t, MustNewDate(0, 12, 31).IsZero())
+	assert.True(t, MustNewDate(1, 1, 1).IsZero())
 }
 
 func TestDateBeforeAfter(t *testing.T) {

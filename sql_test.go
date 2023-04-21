@@ -59,7 +59,7 @@ func TestDateValue(t *testing.T) {
 		date  Date
 		value interface{}
 	}{
-		{Date{}, "0000-12-31"},
+		{Date{}, "0001-01-01"},
 		{MustNewDate(2006, 1, 2), "2006-01-02"},
 		{MustNewDate(1996, 12, 24), "1996-12-24"},
 	}
