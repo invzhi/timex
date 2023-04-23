@@ -153,6 +153,8 @@ func TestParseDateErrors(t *testing.T) {
 		errString string
 	}{
 		{RFC3339, "22-10-25", `parsing date "22-10-25" as "YYYY-MM-DD": cannot parse "22-10-25" as "YYYY"`},
+		{" YYYY-MM-DD", "2010-02-04", `parsing date "2010-02-04" as " YYYY-MM-DD": cannot parse "010-02-04" as "YYYY"`},
+		{" YYYY-MM-DD", "", `parsing date "" as " YYYY-MM-DD": cannot parse "" as "YYYY"`},
 		{"YY-MM-DD", "a2-10-25", `parsing date "a2-10-25" as "YY-MM-DD": cannot parse "a2-10-25" as "YY"`},
 		{"YY-M-DD", "22-a0-25", `parsing date "22-a0-25" as "YY-M-DD": cannot parse "a0-25" as "M"`},
 		{"D MMM YY", "4 --- 00", `parsing date "4 --- 00" as "D MMM YY": cannot parse "--- 00" as "MMM"`},
@@ -163,6 +165,27 @@ func TestParseDateErrors(t *testing.T) {
 		_, err := ParseDate(tt.layout, tt.value)
 		assert.EqualError(t, err, tt.errString)
 	}
+}
+
+func FuzzParseDate(f *testing.F) {
+	f.Add("YYYY-MM-DD", "2006-01-02")
+	f.Add(" YYYY-MM-DD", "")
+	f.Fuzz(func(t *testing.T, layout, value string) {
+		assert.NotPanics(t, func() {
+			_, _ = ParseDate(layout, value)
+		})
+	})
+}
+
+func FuzzDateFormat(f *testing.F) {
+	f.Add(0, "YYYY-MM-DD")
+	f.Add(0, " YYYY-MM-DD")
+	f.Fuzz(func(t *testing.T, n int, layout string) {
+		assert.NotPanics(t, func() {
+			date := Date{ordinal: n}
+			_ = date.Format(layout)
+		})
+	})
 }
 
 func TestDateString(t *testing.T) {
@@ -194,6 +217,11 @@ func TestDateMarshalJSON(t *testing.T) {
 	err = d2.UnmarshalJSON(bytes)
 	assert.NoError(t, err)
 	assert.Equal(t, d1, d2)
+
+	var d3 Date
+	err = d3.UnmarshalJSON([]byte("null"))
+	assert.NoError(t, err)
+	assert.True(t, d3.IsZero())
 }
 
 func TestDateMarshalJSONError(t *testing.T) {

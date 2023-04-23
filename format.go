@@ -212,6 +212,9 @@ func ParseDate(layout, value string) (Date, error) {
 		err.LayoutElem = layout[len(prefix) : len(layout)-len(suffix)]
 
 		layout = suffix
+		if len(value) < len(prefix) {
+			return Date{}, err
+		}
 		value = value[len(prefix):]
 
 		err.ValueElem = value
