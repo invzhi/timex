@@ -142,10 +142,16 @@ func TestOrdinalBeforeYear(t *testing.T) {
 	// Returned ordinal day should be the last day of last year.
 	for year := 1; year < 10000; year++ {
 		n := ordinalBeforeYear(year)
-		y1, _, _ := fromOrdinal(n)
-		y2, _, _ := fromOrdinal(n + 1)
+
+		y1, m1, d1 := fromOrdinal(n)
 		assert.Equal(t, year-1, y1)
+		assert.Equal(t, 12, m1)
+		assert.Equal(t, 31, d1)
+
+		y2, m2, d2 := fromOrdinal(n + 1)
 		assert.Equal(t, year, y2)
+		assert.Equal(t, 1, m2)
+		assert.Equal(t, 1, d2)
 	}
 }
 

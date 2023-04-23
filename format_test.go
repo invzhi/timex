@@ -193,7 +193,6 @@ func TestDateMarshalJSON(t *testing.T) {
 	var d2 Date
 	err = d2.UnmarshalJSON(bytes)
 	assert.NoError(t, err)
-
 	assert.Equal(t, d1, d2)
 }
 
