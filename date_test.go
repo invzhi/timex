@@ -471,6 +471,7 @@ func TestDateAdd(t *testing.T) {
 func TestDateIsZero(t *testing.T) {
 	assert.True(t, Date{}.IsZero())
 	assert.True(t, MustNewDate(1, 1, 1).IsZero())
+	assert.True(t, DateFromTime(time.Time{}).IsZero())
 }
 
 func TestDateBeforeAfter(t *testing.T) {
