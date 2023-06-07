@@ -157,6 +157,16 @@ func TestOrdinalBeforeYear(t *testing.T) {
 }
 
 func TestOrdinalFromTo(t *testing.T) {
+	t.Run("ExtremeValue", func(t *testing.T) {
+		var year int
+
+		year, _, _ = fromOrdinal(math.MaxInt)
+		assert.Greater(t, year, 0)
+
+		year, _, _ = fromOrdinal(math.MinInt)
+		assert.Less(t, year, 0)
+	})
+
 	assert.Equal(t, -1, toOrdinal(0, 12, 31))
 	assert.Equal(t, 0, toOrdinal(1, 1, 1))
 	assert.Equal(t, 1, toOrdinal(1, 1, 2))

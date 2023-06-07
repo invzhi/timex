@@ -267,7 +267,8 @@ func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
 // fromOrdinal returns the date of the specified ordinal.
 // Ordinal day 0 is January 1 of year 1.
 func fromOrdinal(n int) (year, month, day int) {
-	n400, n := norm(0, n+1, daysEvery400Years) // Shift for January 1 of year 1.
+	n400, n := norm(0, n, daysEvery400Years)
+	n400, n = norm(n400, n+1, daysEvery400Years) // Shift for January 1 of year 1, prevent integer overflow.
 	year += n400 * 400
 	// A leap day is added every 400 years, n100 will be increased incorrectly unless make a judgement here.
 	if n == daysEvery400Years {
