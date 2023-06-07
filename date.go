@@ -152,6 +152,11 @@ func (d Date) Add(years, months, days int) Date {
 	return Date{ordinal: n}
 }
 
+// AddDays returns the date corresponding to adding the given number of days to d.
+func (d Date) AddDays(days int) Date {
+	return Date{ordinal: d.ordinal + days}
+}
+
 // Sub returns the number of days since the date d to dd.
 // If the result exceeds the integer scope, the maximum (or minimum) integer will be returned.
 func (d Date) Sub(dd Date) int {

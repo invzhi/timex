@@ -50,6 +50,21 @@ func BenchmarkDateAdd(b *testing.B) {
 	}
 }
 
+func BenchmarkDateAddDays(b *testing.B) {
+	var date Date
+	for i := 0; i < b.N; i++ {
+		date.AddDays(3650000)
+	}
+}
+
+func BenchmarkDateSub(b *testing.B) {
+	d1 := MustNewDate(2006, 1, 2)
+	d2 := MustNewDate(1970, 1, 1)
+	for i := 0; i < b.N; i++ {
+		d1.Sub(d2)
+	}
+}
+
 func TestLeapYear(t *testing.T) {
 	for year := -10000; year <= 10000; year++ {
 		days := ordinalBeforeYear(year+1) - ordinalBeforeYear(year)
@@ -477,6 +492,24 @@ func TestDateAdd(t *testing.T) {
 			MustNewDate(2000, 10, 31).Add(0, -1, 0),
 		)
 	})
+}
+
+func TestDateAddDays(t *testing.T) {
+	tests := []struct {
+		d1, d2 Date
+		days   int
+	}{
+		{MustNewDate(2009, 11, 23), MustNewDate(2009, 11, 24), 1},
+		{MustNewDate(2009, 11, 24), MustNewDate(2009, 11, 23), -1},
+		{MustNewDate(-2009, 11, 24), MustNewDate(-2009, 11, 23), -1},
+		{MustNewDate(2290, 1, 1), MustNewDate(2000, 1, 1), -290*365 - 71},
+		{MustNewDate(2000, 1, 1), MustNewDate(2290, 1, 1), 290*365 + 71},
+	}
+
+	for _, tt := range tests {
+		d3 := tt.d1.AddDays(tt.days)
+		assert.Equal(t, tt.d2, d3)
+	}
 }
 
 func TestDateSub(t *testing.T) {
