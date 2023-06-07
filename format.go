@@ -92,7 +92,7 @@ func searchName(names []string, value string) (int, string, bool) {
 	return -1, value, false
 }
 
-// atoi converts a string to integer with min and max digit length.
+// atoi converts a string to integer with minimum and maximum digit length.
 func atoi(s string, min, max int) (int, string, bool) {
 	var negative bool
 	if len(s) > 0 && (s[0] == '-' || s[0] == '+') {
@@ -120,21 +120,24 @@ func atoi(s string, min, max int) (int, string, bool) {
 	return n, s[index:], true
 }
 
-// appendInt appends the decimal form of integer with specified digit width.
+// appendInt appends the decimal form of integer with specified minimum digit length.
 // If specified digit width is zero, the original form of integer will be followed.
-func appendInt(b []byte, n int, width int) []byte {
+func appendInt(b []byte, n int, min int) []byte {
 	if n < 0 {
 		b = append(b, '-')
 		n = -n
 	}
 
-	if width == 0 {
-		if n == 0 {
-			width = 1
-		}
-		for i := n; i > 0; i /= 10 {
-			width++
-		}
+	var width int
+	if n == 0 {
+		width = 1
+	}
+	for i := n; i > 0; i /= 10 {
+		width++
+	}
+
+	if min > width {
+		width = min
 	}
 
 	if len(b)+width <= cap(b) {
@@ -215,6 +218,11 @@ func ParseDate(layout, value string) (Date, error) {
 		if len(value) < len(prefix) {
 			return Date{}, err
 		}
+		if value[:len(prefix)] != prefix {
+			err.LayoutElem = prefix
+			err.ValueElem = value
+			return Date{}, err
+		}
 		value = value[len(prefix):]
 
 		err.ValueElem = value
@@ -255,7 +263,18 @@ func ParseDate(layout, value string) (Date, error) {
 	return NewDate(year, month, day)
 }
 
-func (d Date) appendRFC3339(b []byte) ([]byte, error) {
+func (d Date) appendRFC3339(b []byte) []byte {
+	year, month, day := fromOrdinal(d.ordinal)
+
+	b = appendInt(b, year, 4)
+	b = append(b, '-')
+	b = appendInt(b, month, 2)
+	b = append(b, '-')
+	b = appendInt(b, day, 2)
+	return b
+}
+
+func (d Date) appendStrictRFC3339(b []byte) ([]byte, error) {
 	year, month, day := fromOrdinal(d.ordinal)
 	if year < 0 || year > 9999 {
 		return nil, errors.New("year is out of range [0,9999]")
@@ -284,7 +303,7 @@ func (d Date) format(layout string) string {
 
 		switch token {
 		case tokenYearTwoDigit:
-			bytes = appendInt(bytes, year, 2)
+			bytes = appendInt(bytes, year%100, 2)
 		case tokenYearFourDigit:
 			bytes = appendInt(bytes, year, 4)
 		case tokenMonth:
@@ -316,14 +335,14 @@ func (d Date) format(layout string) string {
 //	D      1-31             Day of month
 //	DD    01-31             Day of month, 2-digits
 func (d Date) Format(layout string) string {
-	if layout == RFC3339 {
+	switch layout {
+	case RFC3339:
 		b := make([]byte, 0, len(RFC3339))
-		b, err := d.appendRFC3339(b)
-		if err == nil {
-			return string(b)
-		}
+		b = d.appendRFC3339(b)
+		return string(b)
+	default:
+		return d.format(layout)
 	}
-	return d.format(layout)
 }
 
 // String returns the textual representation of the date.
@@ -355,7 +374,7 @@ func (d Date) GoString() string {
 func (d Date) MarshalJSON() ([]byte, error) {
 	b := make([]byte, 0, len(RFC3339)+2)
 	b = append(b, '"')
-	b, err := d.appendRFC3339(b)
+	b, err := d.appendStrictRFC3339(b)
 	if err != nil {
 		return nil, err
 	}
