@@ -1,6 +1,7 @@
 package timex
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -466,6 +467,34 @@ func TestDateAdd(t *testing.T) {
 			MustNewDate(2000, 10, 31).Add(0, -1, 0),
 		)
 	})
+}
+
+func TestDateSub(t *testing.T) {
+	maxDate := Date{ordinal: math.MaxInt}
+	minDate := Date{ordinal: math.MinInt}
+
+	tests := []struct {
+		d1, d2 Date
+		days   int
+	}{
+		{Date{}, Date{}, 0},
+		{minDate, maxDate, math.MinInt},
+		{maxDate, minDate, math.MaxInt},
+		{Date{}, maxDate, -math.MaxInt},
+		{maxDate, Date{}, math.MaxInt},
+		{Date{}, minDate, math.MaxInt},
+		{minDate, Date{}, math.MinInt},
+		{MustNewDate(2009, 11, 23), MustNewDate(2009, 11, 24), -1},
+		{MustNewDate(2009, 11, 24), MustNewDate(2009, 11, 23), 1},
+		{MustNewDate(-2009, 11, 24), MustNewDate(-2009, 11, 23), 1},
+		{MustNewDate(2290, 1, 1), MustNewDate(2000, 1, 1), 290*365 + 71},
+		{MustNewDate(2000, 1, 1), MustNewDate(2290, 1, 1), -290*365 - 71},
+	}
+
+	for _, tt := range tests {
+		days := tt.d1.Sub(tt.d2)
+		assert.Equal(t, tt.days, days)
+	}
 }
 
 func TestDateIsZero(t *testing.T) {

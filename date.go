@@ -3,6 +3,7 @@ package timex
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -149,6 +150,20 @@ func (d Date) Add(years, months, days int) Date {
 	n += day
 
 	return Date{ordinal: n}
+}
+
+// Sub returns the number of days since the date d to dd.
+// If the result exceeds the integer scope, the maximum (or minimum) integer will be returned.
+func (d Date) Sub(dd Date) int {
+	days := d.ordinal - dd.ordinal
+	switch {
+	case d.ordinal >= 0 && dd.ordinal <= 0 && days < 0:
+		return math.MaxInt
+	case d.ordinal <= 0 && dd.ordinal >= 0 && days > 0:
+		return math.MinInt
+	default:
+		return days
+	}
 }
 
 // IsZero reports whether the date d is the zero value, January 1 of year 1.
