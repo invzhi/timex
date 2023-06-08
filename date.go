@@ -110,7 +110,7 @@ func (d Date) ISOWeek() (year, week int) {
 		delta = -3
 	}
 
-	thursday := d.Add(0, 0, delta)
+	thursday := d.AddDays(delta)
 	year, dayOfYear := thursday.OrdinalDate()
 	return year, (dayOfYear-1)/7 + 1
 }
