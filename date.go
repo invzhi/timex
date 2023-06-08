@@ -274,26 +274,22 @@ func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
 func fromOrdinal(n int) (year, month, day int) {
 	n400, n := norm(0, n, daysEvery400Years)
 	n400, n = norm(n400, n+1, daysEvery400Years) // Shift for January 1 of year 1, prevent integer overflow.
-	year += n400 * 400
-	// A leap day is added every 400 years, n100 will be increased incorrectly unless make a judgement here.
-	if n == daysEvery400Years {
-		year, month, day = year+400, 12, 31
-		return
-	}
+	year = n400*400 + 1                          // Start from year 1
 
-	n100, n := norm(0, n, daysEvery100Years)
+	n100 := (n - 1) / daysEvery100Years
+	n100 -= n100 / 4 // Handle the leap day every 400 years. If n100 is 4, set it to 3.
 	year += n100 * 100
+	n -= daysEvery100Years * n100
 
-	n4, n := norm(0, n, daysEvery4Years)
+	n4 := (n - 1) / daysEvery4Years
 	year += n4 * 4
-	// A leap day is added every 4 years, n1 will be increased incorrectly unless make a judgement here.
-	if n == daysEvery4Years {
-		year, month, day = year+4, 12, 31
-		return
-	}
+	n -= daysEvery4Years * n4
 
-	n1, n := norm(0, n, 365)
-	year += n1 + 1 // Start from year 1.
+	n1 := (n - 1) / 365
+	n1 -= n1 / 4 // Handle the leap day every 4 years. If n1 is 4, set it to 3.
+	year += n1
+	n -= 365 * n1
+
 	return fromOrdinalDate(year, n)
 }
 

@@ -156,7 +156,7 @@ func TestOrdinalBeforeYear(t *testing.T) {
 	}
 
 	// Returned ordinal day should be the last day of last year.
-	for year := 1; year < 10000; year++ {
+	for year := -10000; year < 10000; year++ {
 		n := ordinalBeforeYear(year)
 
 		y1, m1, d1 := fromOrdinal(n)
