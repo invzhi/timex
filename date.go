@@ -251,21 +251,26 @@ func ordinalBeforeYear(year int) int {
 
 // fromOrdinalDate returns the date of the specified ordinal date.
 func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
-	min, max := 1, 12
-	for min < max {
-		m := max - (max-min)/2
-		n := daysBeforeMonth(year, m)
+	day := dayOfYear
+	if isLeap(year) {
 		switch {
-		case n < dayOfYear:
-			min = m
-		case n > dayOfYear:
-			max = m - 1
-		default:
-			min, max = m-1, m-1
+		case day == 31+29:
+			return year, 2, 29 // Leap day.
+		case day > 31+29:
+			day-- // Remove leap day.
 		}
 	}
-	month := min
-	day := dayOfYear - daysBeforeMonth(year, month)
+
+	month := (dayOfYear-1)/31 + 1
+
+	days := int(daysInYear[month])
+	if day > days {
+		month++
+		day -= days
+	} else {
+		day -= int(daysInYear[month-1])
+	}
+
 	return year, month, day
 }
 
