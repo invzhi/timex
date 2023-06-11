@@ -9,60 +9,203 @@ import (
 )
 
 func BenchmarkDateOrdinalDate(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		date.OrdinalDate()
-	}
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.OrdinalDate()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.YearDay()
+		}
+	})
 }
 
 func BenchmarkDateDate(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		date.Date()
-	}
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Date()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Date()
+		}
+	})
+}
+
+func BenchmarkDateYear(b *testing.B) {
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Year()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Year()
+		}
+	})
+}
+
+func BenchmarkDateMonth(b *testing.B) {
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Month()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Month()
+		}
+	})
+}
+
+func BenchmarkDateDay(b *testing.B) {
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Day()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Day()
+		}
+	})
+}
+
+func BenchmarkDateDayOfYear(b *testing.B) {
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.DayOfYear()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.YearDay()
+		}
+	})
 }
 
 func BenchmarkDateWeekday(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		date.Weekday()
-	}
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Weekday()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Weekday()
+		}
+	})
 }
 
 func BenchmarkDateISOWeek(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		date.ISOWeek()
-	}
-}
+	date := MustNewDate(2006, 12, 20)
 
-func BenchmarkDateQuarter(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		date.Quarter()
-	}
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.ISOWeek()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.ISOWeek()
+		}
+	})
 }
 
 func BenchmarkDateAdd(b *testing.B) {
-	var date Date
-	for i := 0; i < b.N; i++ {
-		date.Add(10, 100, 3650000)
-	}
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Add(10, 100, 1000)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.AddDate(10, 100, 1000)
+		}
+	})
 }
 
 func BenchmarkDateAddDays(b *testing.B) {
-	var date Date
-	for i := 0; i < b.N; i++ {
-		date.AddDays(3650000)
-	}
+	date := MustNewDate(2006, 12, 20)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.AddDays(1000)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Add(1000 * 24 * time.Hour)
+		}
+	})
 }
 
 func BenchmarkDateSub(b *testing.B) {
 	d1 := MustNewDate(2006, 1, 2)
 	d2 := MustNewDate(1970, 1, 1)
-	for i := 0; i < b.N; i++ {
-		d1.Sub(d2)
-	}
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			d1.Sub(d2)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		t1 := d1.Time(time.UTC)
+		t2 := d2.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t1.Sub(t2)
+		}
+	})
 }
 
 func TestLeapYear(t *testing.T) {

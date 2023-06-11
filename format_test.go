@@ -2,21 +2,42 @@ package timex
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkDateParse(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = ParseDate("YYYY-MM-DD", "2006-01-02")
-	}
+	value := "2006-01-02"
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = ParseDate("YYYY-MM-DD", value)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = time.ParseInLocation("2006-01-02", value, time.UTC)
+		}
+	})
 }
 
 func BenchmarkDateFormat(b *testing.B) {
 	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		_ = date.Format(RFC3339)
-	}
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			date.Format("YYYY-MM-DD")
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			d.Format("2006-01-02")
+		}
+	})
 }
 
 func BenchmarkDateString(b *testing.B) {
@@ -35,9 +56,46 @@ func BenchmarkDateGoString(b *testing.B) {
 
 func BenchmarkDateMarshalJSON(b *testing.B) {
 	date := MustNewDate(2006, 1, 2)
-	for i := 0; i < b.N; i++ {
-		_, _ = date.MarshalJSON()
-	}
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = date.MarshalJSON()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		d := date.Time(time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = d.MarshalJSON()
+		}
+	})
+}
+
+func BenchmarkDateUnmarshalJSON(b *testing.B) {
+	b.Run("Timex", func(b *testing.B) {
+		var date Date
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = date.UnmarshalJSON([]byte(`"2006-01-02"`))
+		}
+
+		b.StopTimer()
+		assert.True(b, !date.IsZero())
+	})
+	b.Run("Time", func(b *testing.B) {
+		var d time.Time
+		bytes, _ := time.Now().MarshalJSON()
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = d.UnmarshalJSON(bytes)
+		}
+
+		b.StopTimer()
+		assert.True(b, !d.IsZero())
+	})
 }
 
 func TestAppendInt(t *testing.T) {
