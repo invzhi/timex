@@ -287,7 +287,7 @@ func ordinalToOrdinalDate(n int) (year, dayOfYear int) {
 	year = n400*400 + 1                          // Start from year 1
 
 	n100 := (n - 1) / daysEvery100Years
-	n100 -= n100 / 4 // Handle the leap day every 400 years. If n100 is 4, set it to 3.
+	n100 -= n100 >> 2 // Handle the leap day every 400 years. If n100 is 4, set it to 3.
 	year += n100 * 100
 	n -= daysEvery100Years * n100
 
@@ -296,7 +296,7 @@ func ordinalToOrdinalDate(n int) (year, dayOfYear int) {
 	n -= daysEvery4Years * n4
 
 	n1 := (n - 1) / 365
-	n1 -= n1 / 4 // Handle the leap day every 4 years. If n1 is 4, set it to 3.
+	n1 -= n1 >> 2 // Handle the leap day every 4 years. If n1 is 4, set it to 3.
 	year += n1
 	n -= 365 * n1
 

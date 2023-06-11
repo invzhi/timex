@@ -302,9 +302,30 @@ func TestDateMarshalJSONError(t *testing.T) {
 		{10000, 1, 2, "year is out of range [0,9999]"},
 		{10200, 1, 2, "year is out of range [0,9999]"},
 	}
+
 	for _, tt := range tests {
 		date := MustNewDate(tt.year, tt.month, tt.day)
 		_, err := date.MarshalJSON()
+		assert.EqualError(t, err, tt.errString)
+	}
+}
+
+func TestDateUnmarshalJSONError(t *testing.T) {
+	tests := []struct {
+		s         string
+		errString string
+	}{
+		{`2006-01-02`, `Date.UnmarshalJSON: input is not a JSON string`},
+		{`"-1-01-02"`, `parsing date "-1-01-02" as "YYYY-MM-DD"`},
+		{`"10000-01-02"`, `parsing date "10000-01-02" as "YYYY-MM-DD"`},
+		{`"12345-01-02"`, `parsing date "12345-01-02" as "YYYY-MM-DD"`},
+		{`"2006+01+02"`, `parsing date "2006+01+02" as "YYYY-MM-DD"`},
+		{`"YYYY-01-02"`, `parsing date "YYYY-01-02" as "YYYY-MM-DD"`},
+	}
+
+	for _, tt := range tests {
+		var date Date
+		err := date.UnmarshalJSON([]byte(tt.s))
 		assert.EqualError(t, err, tt.errString)
 	}
 }

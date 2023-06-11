@@ -60,6 +60,9 @@ type ParseError struct {
 
 // Error returns the string representation of a ParseError.
 func (e *ParseError) Error() string {
+	if len(e.LayoutElem) == 0 && len(e.ValueElem) == 0 {
+		return fmt.Sprintf("parsing date %q as %q", e.Value, e.Layout)
+	}
 	return fmt.Sprintf("parsing date %q as %q: cannot parse %q as %q", e.Value, e.Layout, e.ValueElem, e.LayoutElem)
 }
 
@@ -190,6 +193,33 @@ func nextToken(layout string) (prefix string, token int, suffix string) {
 		}
 	}
 	return layout, 0, ""
+}
+
+func parseStrictRFC3339(b []byte) (Date, error) {
+	if len(b) < len(RFC3339) {
+		return Date{}, &ParseError{Layout: RFC3339, Value: string(b)}
+	}
+
+	ok := true
+	parseUint := func(s []byte) (n int) {
+		for _, c := range s {
+			if c < '0' || c > '9' {
+				ok = false
+				return 0
+			}
+			n = n*10 + int(c-'0')
+		}
+		return n
+	}
+
+	year := parseUint(b[0:4])
+	month := parseUint(b[5:7])
+	day := parseUint(b[8:10])
+	if !ok || b[4] != '-' || b[7] != '-' {
+		return Date{}, &ParseError{Layout: RFC3339, Value: string(b)}
+	}
+
+	return NewDate(year, month, day)
 }
 
 // ParseDate parses a formatted string and returns the date it represents.
@@ -388,8 +418,11 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		return nil
 	}
+	if len(data) < 2 || data[0] != '"' || data[len(data)-1] != '"' {
+		return errors.New("Date.UnmarshalJSON: input is not a JSON string")
+	}
 
 	var err error
-	*d, err = ParseDate(`"`+RFC3339+`"`, string(data))
+	*d, err = parseStrictRFC3339(data[1 : len(data)-1])
 	return err
 }
