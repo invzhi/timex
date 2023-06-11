@@ -264,7 +264,7 @@ func ParseDate(layout, value string) (Date, error) {
 }
 
 func (d Date) appendRFC3339(b []byte) []byte {
-	year, month, day := fromOrdinal(d.ordinal)
+	year, month, day := ordinalToCalendar(d.ordinal)
 
 	b = appendInt(b, year, 4)
 	b = append(b, '-')
@@ -275,7 +275,7 @@ func (d Date) appendRFC3339(b []byte) []byte {
 }
 
 func (d Date) appendStrictRFC3339(b []byte) ([]byte, error) {
-	year, month, day := fromOrdinal(d.ordinal)
+	year, month, day := ordinalToCalendar(d.ordinal)
 	if year < 0 || year > 9999 {
 		return nil, errors.New("year is out of range [0,9999]")
 	}
@@ -289,7 +289,7 @@ func (d Date) appendStrictRFC3339(b []byte) ([]byte, error) {
 }
 
 func (d Date) format(layout string) string {
-	year, month, day := fromOrdinal(d.ordinal)
+	year, month, day := ordinalToCalendar(d.ordinal)
 	bytes := make([]byte, 0, len(layout)+10)
 
 	for {
@@ -352,7 +352,7 @@ func (d Date) String() string {
 
 // GoString returns the Go syntax of the date.
 func (d Date) GoString() string {
-	year, month, day := fromOrdinal(d.ordinal)
+	year, month, day := ordinalToCalendar(d.ordinal)
 
 	bytes := make([]byte, 0, 32)
 

@@ -159,44 +159,86 @@ func TestOrdinalBeforeYear(t *testing.T) {
 	for year := -10000; year < 10000; year++ {
 		n := ordinalBeforeYear(year)
 
-		y1, m1, d1 := fromOrdinal(n)
+		y1, m1, d1 := ordinalToCalendar(n)
 		assert.Equal(t, year-1, y1)
 		assert.Equal(t, 12, m1)
 		assert.Equal(t, 31, d1)
 
-		y2, m2, d2 := fromOrdinal(n + 1)
+		y2, m2, d2 := ordinalToCalendar(n + 1)
 		assert.Equal(t, year, y2)
 		assert.Equal(t, 1, m2)
 		assert.Equal(t, 1, d2)
 	}
 }
 
-func TestOrdinalFromTo(t *testing.T) {
-	t.Run("ExtremeValue", func(t *testing.T) {
-		var year int
+func TestDateOrdinal(t *testing.T) {
+	t.Run("OrdinalDate", func(t *testing.T) {
+		tests := []struct {
+			n               int
+			year, dayOfYear int
+		}{
+			{-daysEvery400Years - 366, -400, 1},
+			{-daysEvery400Years - 1, -400, 366},
+			{-daysEvery400Years, -399, 1},
+			{-daysEvery100Years - 366, -100, 1},
+			{-daysEvery100Years - 2, -100, 365},
+			{-daysEvery100Years - 1, -99, 1},
+			{-daysEvery100Years, -99, 2},
+			{-daysEvery4Years - 366, -4, 1},
+			{-daysEvery4Years - 1, -4, 366},
+			{-daysEvery4Years, -3, 1},
+			{-367, -1, 365},
+			{-366, 0, 1},
+			{-1, 0, 366},
+			{0, 1, 1},
+			{1, 1, 2},
+			{364, 1, 365},
+			{365, 2, 1},
+			{daysEvery4Years - 1, 4, 366},
+			{daysEvery4Years, 5, 1},
+			{daysEvery100Years - 1, 100, 365},
+			{daysEvery100Years, 101, 1},
+			{daysEvery400Years - 1, 400, 366},
+			{daysEvery400Years, 401, 1},
+		}
 
-		year, _, _ = fromOrdinal(math.MaxInt)
-		assert.Greater(t, year, 0)
+		for _, tt := range tests {
+			year, dayOfYear := ordinalToOrdinalDate(tt.n)
 
-		year, _, _ = fromOrdinal(math.MinInt)
-		assert.Less(t, year, 0)
+			assert.Equal(t, tt.year, year)
+			assert.Equal(t, tt.dayOfYear, dayOfYear)
+
+			assert.Equal(t, tt.n, ordinalDateToOrdinal(tt.year, tt.dayOfYear))
+		}
 	})
 
-	assert.Equal(t, -1, toOrdinal(0, 12, 31))
-	assert.Equal(t, 0, toOrdinal(1, 1, 1))
-	assert.Equal(t, 1, toOrdinal(1, 1, 2))
+	t.Run("Calendar", func(t *testing.T) {
+		assert.Equal(t, -1, calendarToOrdinal(0, 12, 31))
+		assert.Equal(t, 0, calendarToOrdinal(1, 1, 1))
+		assert.Equal(t, 1, calendarToOrdinal(1, 1, 2))
 
-	for n := -3650000; n <= 3650000; n++ {
-		year, month, day := fromOrdinal(n)
+		for n := -3650000; n <= 3650000; n++ {
+			year, month, day := ordinalToCalendar(n)
 
-		assert.GreaterOrEqual(t, month, 1)
-		assert.LessOrEqual(t, month, 12)
+			assert.GreaterOrEqual(t, month, 1)
+			assert.LessOrEqual(t, month, 12)
 
-		assert.GreaterOrEqual(t, day, 1)
-		assert.LessOrEqual(t, day, daysInMonth(year, month))
+			assert.GreaterOrEqual(t, day, 1)
+			assert.LessOrEqual(t, day, daysInMonth(year, month))
 
-		assert.Equal(t, n, toOrdinal(year, month, day))
-	}
+			assert.Equal(t, n, calendarToOrdinal(year, month, day))
+		}
+	})
+
+	t.Run("Overflow", func(t *testing.T) {
+		var year int
+
+		year, _, _ = ordinalToCalendar(math.MaxInt)
+		assert.Greater(t, year, 0)
+
+		year, _, _ = ordinalToCalendar(math.MinInt)
+		assert.Less(t, year, 0)
+	})
 }
 
 func TestDateFromTime(t *testing.T) {
@@ -223,33 +265,12 @@ func TestDateFromTime(t *testing.T) {
 	}
 
 	t.Run("Today", func(t *testing.T) {
-		now := time.Now()
+		now := time.Now().In(time.UTC)
 		date := Today(time.UTC)
 
 		assert.Equal(t, now.Year(), date.Year())
 		assert.Equal(t, now.YearDay(), date.DayOfYear())
 	})
-}
-
-func TestDateOrdinalDate(t *testing.T) {
-	for year := -10000; year <= 10000; year++ {
-		days := 365
-		if isLeap(year) {
-			days = 366
-		}
-		for dayOfYear := 1; dayOfYear <= days; dayOfYear++ {
-			{
-				y, m, d := fromOrdinalDate(year, dayOfYear)
-				y, yearDay := MustNewDate(y, m, d).OrdinalDate()
-				assert.Equal(t, year, y)
-				assert.Equal(t, dayOfYear, yearDay)
-			}
-			{
-				n := ordinalBeforeYear(year) + dayOfYear
-				assert.Equal(t, dayOfYear, Date{ordinal: n}.DayOfYear())
-			}
-		}
-	}
 }
 
 func TestNewDateErrors(t *testing.T) {
@@ -274,6 +295,41 @@ func TestNewDateErrors(t *testing.T) {
 			_ = MustNewDate(tt.year, tt.month, tt.day)
 		}, "timex: NewDate: "+tt.errString)
 	}
+}
+
+func TestDateFromOrdinalDate(t *testing.T) {
+	for year := -10000; year <= 10000; year++ {
+		days := 365
+		if isLeap(year) {
+			days = 366
+		}
+		for dayOfYear := 1; dayOfYear <= days; dayOfYear++ {
+			y, yd := MustDateFromOrdinalDate(year, dayOfYear).OrdinalDate()
+			assert.Equal(t, year, y)
+			assert.Equal(t, dayOfYear, yd)
+		}
+	}
+
+	t.Run("Errors", func(t *testing.T) {
+		tests := []struct {
+			year, dayOfYear int
+			errString       string
+		}{
+			{2000, -1, "day of year is out of range [1,366]"},
+			{2000, 0, "day of year is out of range [1,366]"},
+			{2000, 367, "day of year is out of range [1,366]"},
+			{2001, 366, "day of year is out of range [1,365]"},
+		}
+
+		for _, tt := range tests {
+			_, err := DateFromOrdinalDate(tt.year, tt.dayOfYear)
+			assert.EqualError(t, err, tt.errString)
+
+			assert.Panicsf(t, func() {
+				_ = MustDateFromOrdinalDate(tt.year, tt.dayOfYear)
+			}, "timex: DateFromOrdinalDate: "+tt.errString)
+		}
+	})
 }
 
 func TestDateWeekday(t *testing.T) {

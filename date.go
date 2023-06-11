@@ -26,7 +26,7 @@ func NewDate(year, month, day int) (Date, error) {
 		return Date{}, fmt.Errorf("day is out of range [1,%d]", days)
 	}
 
-	n := toOrdinal(year, month, day)
+	n := calendarToOrdinal(year, month, day)
 	return Date{ordinal: n}, nil
 }
 
@@ -39,10 +39,34 @@ func MustNewDate(year, month, day int) Date {
 	return date
 }
 
+// DateFromOrdinalDate returns the date corresponding to year, day of year.
+func DateFromOrdinalDate(year, dayOfYear int) (Date, error) {
+	days := 365
+	if isLeap(year) {
+		days++
+	}
+
+	if dayOfYear < 1 || dayOfYear > days {
+		return Date{}, fmt.Errorf("day of year is out of range [1,%d]", days)
+	}
+
+	n := ordinalDateToOrdinal(year, dayOfYear)
+	return Date{ordinal: n}, nil
+}
+
+// MustDateFromOrdinalDate is like DateFromOrdinalDate but panics if the date cannot be created.
+func MustDateFromOrdinalDate(year, dayOfYear int) Date {
+	date, err := DateFromOrdinalDate(year, dayOfYear)
+	if err != nil {
+		panic(`timex: DateFromOrdinalDate: ` + err.Error())
+	}
+	return date
+}
+
 // DateFromTime returns the date specified by t.
 func DateFromTime(t time.Time) Date {
 	year, month, day := t.Date()
-	n := toOrdinal(year, int(month), day)
+	n := calendarToOrdinal(year, int(month), day)
 	return Date{ordinal: n}
 }
 
@@ -54,44 +78,49 @@ func Today(location *time.Location) Date {
 
 // Time returns the time.Time specified by d in the given location.
 func (d Date) Time(location *time.Location) time.Time {
-	year, month, day := fromOrdinal(d.ordinal)
+	year, month, day := ordinalToCalendar(d.ordinal)
 	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, location)
 }
 
 // OrdinalDate returns the ordinal date specified by d.
 func (d Date) OrdinalDate() (year, dayOfYear int) {
-	year, month, day := fromOrdinal(d.ordinal)
-	return year, daysBeforeMonth(year, month) + day
+	return ordinalToOrdinalDate(d.ordinal)
 }
 
 // Date returns the date specified by d.
 func (d Date) Date() (year, month, day int) {
-	year, month, day = fromOrdinal(d.ordinal)
+	year, month, day = ordinalToCalendar(d.ordinal)
 	return
 }
 
 // Year returns the year specified by d.
 func (d Date) Year() int {
-	year, _, _ := fromOrdinal(d.ordinal)
+	year, _ := ordinalToOrdinalDate(d.ordinal)
 	return year
+}
+
+// Quarter returns the quarter specified by d.
+func (d Date) Quarter() int {
+	_, month, _ := ordinalToCalendar(d.ordinal)
+	return (month-1)/3 + 1
 }
 
 // Month returns the month specified by d.
 func (d Date) Month() int {
-	_, month, _ := fromOrdinal(d.ordinal)
+	_, month, _ := ordinalToCalendar(d.ordinal)
 	return month
 }
 
 // Day returns the day of month specified by d.
 func (d Date) Day() int {
-	_, _, day := fromOrdinal(d.ordinal)
+	_, _, day := ordinalToCalendar(d.ordinal)
 	return day
 }
 
 // DayOfYear returns the day of year specified by d.
 func (d Date) DayOfYear() int {
-	year, month, day := fromOrdinal(d.ordinal)
-	return daysBeforeMonth(year, month) + day
+	_, dayOfYear := ordinalToOrdinalDate(d.ordinal)
+	return dayOfYear
 }
 
 // Weekday returns the day of week specified by d.
@@ -110,15 +139,9 @@ func (d Date) ISOWeek() (year, week int) {
 		delta = -3
 	}
 
-	thursday := d.AddDays(delta)
-	year, dayOfYear := thursday.OrdinalDate()
+	thursday := d.ordinal + delta
+	year, dayOfYear := ordinalToOrdinalDate(thursday)
 	return year, (dayOfYear-1)/7 + 1
-}
-
-// Quarter returns the quarter specified by d.
-func (d Date) Quarter() int {
-	_, month, _ := fromOrdinal(d.ordinal)
-	return (month-1)/3 + 1
 }
 
 // norm normalize the hi and lo into [1, base].
@@ -138,7 +161,7 @@ func norm(hi, lo, base int) (int, int) {
 
 // Add returns the date corresponding to adding the given number of years, months, and days to d.
 func (d Date) Add(years, months, days int) Date {
-	year, month, day := fromOrdinal(d.ordinal)
+	year, month, day := ordinalToCalendar(d.ordinal)
 
 	year += years
 	month += months
@@ -249,8 +272,38 @@ func ordinalBeforeYear(year int) int {
 	return (year-1)*365 + delta - 1 // Shift for January 1 of year 1.
 }
 
-// fromOrdinalDate returns the date of the specified ordinal date.
-func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
+func ordinalDateToOrdinal(year, dayOfYear int) int {
+	return ordinalBeforeYear(year) + dayOfYear
+}
+
+func calendarToOrdinal(year, month, day int) int {
+	dayOfYear := daysBeforeMonth(year, month) + day
+	return ordinalDateToOrdinal(year, dayOfYear)
+}
+
+func ordinalToOrdinalDate(n int) (year, dayOfYear int) {
+	n400, n := norm(0, n, daysEvery400Years)
+	n400, n = norm(n400, n+1, daysEvery400Years) // Shift for January 1 of year 1, prevent integer overflow.
+	year = n400*400 + 1                          // Start from year 1
+
+	n100 := (n - 1) / daysEvery100Years
+	n100 -= n100 / 4 // Handle the leap day every 400 years. If n100 is 4, set it to 3.
+	year += n100 * 100
+	n -= daysEvery100Years * n100
+
+	n4 := (n - 1) / daysEvery4Years
+	year += n4 * 4
+	n -= daysEvery4Years * n4
+
+	n1 := (n - 1) / 365
+	n1 -= n1 / 4 // Handle the leap day every 4 years. If n1 is 4, set it to 3.
+	year += n1
+	n -= 365 * n1
+
+	return year, n
+}
+
+func ordinalDateToCalendar(year, dayOfYear int) (int, int, int) {
 	day := dayOfYear
 	if isLeap(year) {
 		switch {
@@ -274,35 +327,7 @@ func fromOrdinalDate(year, dayOfYear int) (int, int, int) {
 	return year, month, day
 }
 
-// fromOrdinal returns the date of the specified ordinal.
-// Ordinal day 0 is January 1 of year 1.
-func fromOrdinal(n int) (year, month, day int) {
-	n400, n := norm(0, n, daysEvery400Years)
-	n400, n = norm(n400, n+1, daysEvery400Years) // Shift for January 1 of year 1, prevent integer overflow.
-	year = n400*400 + 1                          // Start from year 1
-
-	n100 := (n - 1) / daysEvery100Years
-	n100 -= n100 / 4 // Handle the leap day every 400 years. If n100 is 4, set it to 3.
-	year += n100 * 100
-	n -= daysEvery100Years * n100
-
-	n4 := (n - 1) / daysEvery4Years
-	year += n4 * 4
-	n -= daysEvery4Years * n4
-
-	n1 := (n - 1) / 365
-	n1 -= n1 / 4 // Handle the leap day every 4 years. If n1 is 4, set it to 3.
-	year += n1
-	n -= 365 * n1
-
-	return fromOrdinalDate(year, n)
-}
-
-// toOrdinal returns the ordinal of the specified date.
-// January 1 of year 1 is ordinal day 0.
-func toOrdinal(year, month, day int) int {
-	n := ordinalBeforeYear(year)
-	n += daysBeforeMonth(year, month)
-	n += day
-	return n
+func ordinalToCalendar(n int) (year, month, day int) {
+	year, dayOfYear := ordinalToOrdinalDate(n)
+	return ordinalDateToCalendar(year, dayOfYear)
 }
