@@ -8,16 +8,16 @@ import (
 )
 
 func BenchmarkDateParse(b *testing.B) {
-	value := "2006-01-02"
+	value := "02/01/2006"
 
 	b.Run("Timex", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = ParseDate("YYYY-MM-DD", value)
+			_, _ = ParseDate("DD/MM/YYYY", value)
 		}
 	})
 	b.Run("Time", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = time.ParseInLocation("2006-01-02", value, time.UTC)
+			_, _ = time.ParseInLocation("02/01/2006", value, time.UTC)
 		}
 	})
 }

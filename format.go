@@ -66,6 +66,12 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("parsing date %q as %q: cannot parse %q as %q", e.Value, e.Layout, e.ValueElem, e.LayoutElem)
 }
 
+func isDigit(c byte) bool { return c >= '0' && c <= '9' }
+
+func fromDigit(c byte) int { return int(c - '0') }
+
+func toDigit(n int) byte { return byte(n) + '0' }
+
 // match reports whether s1 and s2 match ignoring case.
 // It is assumed s1 and s2 are the same length.
 func match(s1, s2 string) bool {
@@ -97,6 +103,25 @@ func searchName(names []string, value string) (int, string, bool) {
 
 // atoi converts a string to integer with minimum and maximum digit length.
 func atoi(s string, min, max int) (int, string, bool) {
+	// Optimization for the most common scenario.
+	if min == 2 && max == 2 && len(s) >= 2 {
+		if !isDigit(s[0]) || !isDigit(s[1]) {
+			goto SLOW
+		}
+
+		n := fromDigit(s[0])*1e1 + fromDigit(s[1])
+		return n, s[2:], true
+	}
+	if min == 4 && max == 4 && len(s) >= 4 {
+		if !isDigit(s[0]) || !isDigit(s[1]) || !isDigit(s[2]) || !isDigit(s[3]) {
+			goto SLOW
+		}
+
+		n := fromDigit(s[0])*1e3 + fromDigit(s[1])*1e2 + fromDigit(s[2])*1e1 + fromDigit(s[3])
+		return n, s[4:], true
+	}
+
+SLOW:
 	var negative bool
 	if len(s) > 0 && (s[0] == '-' || s[0] == '+') {
 		negative = s[0] == '-'
@@ -106,11 +131,11 @@ func atoi(s string, min, max int) (int, string, bool) {
 	var n, index int
 	for ; index < len(s) && index < max; index++ {
 		c := s[index]
-		if c < '0' || c > '9' {
+		if !isDigit(c) {
 			break
 		}
 
-		n = n*10 + int(c-'0')
+		n = n*10 + fromDigit(c)
 	}
 	if index < min {
 		return 0, "", false
@@ -129,6 +154,14 @@ func appendInt(b []byte, n int, min int) []byte {
 	if n < 0 {
 		b = append(b, '-')
 		n = -n
+	}
+
+	// Optimization for the most common scenario.
+	switch {
+	case min == 2 && n < 1e2:
+		return append(b, toDigit(n/1e1), toDigit(n%1e1))
+	case min == 4 && n < 1e4:
+		return append(b, toDigit(n/1e3), toDigit(n/1e2%1e1), toDigit(n/1e1%1e1), toDigit(n%1e1))
 	}
 
 	var width int
@@ -153,7 +186,7 @@ func appendInt(b []byte, n int, min int) []byte {
 		index := len(b) - 1 - i
 
 		next := n / 10
-		b[index] = byte(n-next*10) + '0'
+		b[index] = toDigit(n - next*10)
 		n = next
 	}
 
@@ -203,7 +236,7 @@ func parseStrictRFC3339(b []byte) (Date, error) {
 	ok := true
 	parseUint := func(s []byte) (n int) {
 		for _, c := range s {
-			if c < '0' || c > '9' {
+			if !isDigit(c) {
 				ok = false
 				return 0
 			}
@@ -235,27 +268,26 @@ func parseStrictRFC3339(b []byte) (Date, error) {
 func ParseDate(layout, value string) (Date, error) {
 	var year, month, day int
 
-	err := &ParseError{Layout: layout, Value: value}
+	originLayout, originValue := layout, value
+	var layoutElem, valueElem string
 	for {
 		prefix, token, suffix := nextToken(layout)
 		if token == 0 {
 			break
 		}
 
-		err.LayoutElem = layout[len(prefix) : len(layout)-len(suffix)]
+		layoutElem = layout[len(prefix) : len(layout)-len(suffix)]
 
 		layout = suffix
 		if len(value) < len(prefix) {
-			return Date{}, err
+			return Date{}, &ParseError{Layout: originLayout, Value: originValue, LayoutElem: layoutElem, ValueElem: valueElem}
 		}
 		if value[:len(prefix)] != prefix {
-			err.LayoutElem = prefix
-			err.ValueElem = value
-			return Date{}, err
+			return Date{}, &ParseError{Layout: originLayout, Value: originValue, LayoutElem: prefix, ValueElem: value}
 		}
 		value = value[len(prefix):]
 
-		err.ValueElem = value
+		valueElem = value
 
 		var ok bool
 
@@ -286,7 +318,7 @@ func ParseDate(layout, value string) (Date, error) {
 		}
 
 		if !ok {
-			return Date{}, err
+			return Date{}, &ParseError{Layout: originLayout, Value: originValue, LayoutElem: layoutElem, ValueElem: valueElem}
 		}
 	}
 
