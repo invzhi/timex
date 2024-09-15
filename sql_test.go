@@ -1,10 +1,12 @@
-package timex
+package timex_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/invzhi/timex"
 )
 
 func TestDateScan(t *testing.T) {
@@ -22,15 +24,15 @@ func TestDateScan(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		var date Date
+		var date timex.Date
 		err := date.Scan(tt.value)
 		assert.NoError(t, err)
 
-		assert.Equal(t, tt.s, date.Format(RFC3339))
+		assert.Equal(t, tt.s, date.Format(timex.RFC3339))
 	}
 
 	t.Run("NullDate", func(t *testing.T) {
-		var date NullDate
+		var date timex.NullDate
 		err := date.Scan(nil)
 		assert.NoError(t, err)
 		assert.False(t, date.Valid)
@@ -39,29 +41,29 @@ func TestDateScan(t *testing.T) {
 			err = date.Scan(tt.value)
 			assert.NoError(t, err)
 
-			assert.Equal(t, tt.s, date.Date.Format(RFC3339))
+			assert.Equal(t, tt.s, date.Date.Format(timex.RFC3339))
 			assert.True(t, date.Valid)
 		}
 	})
 }
 
 func TestDateScanErrors(t *testing.T) {
-	assert.EqualError(t, new(Date).Scan(nil), "unsupported type <nil>")
-	assert.EqualError(t, new(Date).Scan(uint64(1)), "unsupported type uint64")
+	assert.EqualError(t, new(timex.Date).Scan(nil), "unsupported type <nil>")
+	assert.EqualError(t, new(timex.Date).Scan(uint64(1)), "unsupported type uint64")
 
 	t.Run("NullDate", func(t *testing.T) {
-		assert.EqualError(t, new(NullDate).Scan(uint64(1)), "unsupported type uint64")
+		assert.EqualError(t, new(timex.NullDate).Scan(uint64(1)), "unsupported type uint64")
 	})
 }
 
 func TestDateValue(t *testing.T) {
 	tests := []struct {
-		date  Date
+		date  timex.Date
 		value interface{}
 	}{
-		{Date{}, "0001-01-01"},
-		{MustNewDate(2006, 1, 2), "2006-01-02"},
-		{MustNewDate(1996, 12, 24), "1996-12-24"},
+		{timex.Date{}, "0001-01-01"},
+		{timex.MustNewDate(2006, 1, 2), "2006-01-02"},
+		{timex.MustNewDate(1996, 12, 24), "1996-12-24"},
 	}
 
 	for _, tt := range tests {
@@ -71,12 +73,12 @@ func TestDateValue(t *testing.T) {
 	}
 
 	t.Run("NullDate", func(t *testing.T) {
-		value, err := NullDate{}.Value()
+		value, err := timex.NullDate{}.Value()
 		assert.NoError(t, err)
 		assert.Nil(t, value)
 
 		for _, tt := range tests {
-			date := NullDate{Date: tt.date, Valid: true}
+			date := timex.NullDate{Date: tt.date, Valid: true}
 			value, err := date.Value()
 			assert.NoError(t, err)
 			assert.Equal(t, tt.value, value)

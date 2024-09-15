@@ -1,10 +1,12 @@
-package timex
+package timex_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/invzhi/timex"
 )
 
 func BenchmarkDateParse(b *testing.B) {
@@ -12,7 +14,7 @@ func BenchmarkDateParse(b *testing.B) {
 
 	b.Run("Timex", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = ParseDate("DD/MM/YYYY", value)
+			_, _ = timex.ParseDate("DD/MM/YYYY", value)
 		}
 	})
 	b.Run("Time", func(b *testing.B) {
@@ -23,7 +25,7 @@ func BenchmarkDateParse(b *testing.B) {
 }
 
 func BenchmarkDateFormat(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
+	date := timex.MustNewDate(2006, 1, 2)
 
 	b.Run("Timex", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -41,21 +43,21 @@ func BenchmarkDateFormat(b *testing.B) {
 }
 
 func BenchmarkDateString(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
+	date := timex.MustNewDate(2006, 1, 2)
 	for i := 0; i < b.N; i++ {
 		_ = date.String()
 	}
 }
 
 func BenchmarkDateGoString(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
+	date := timex.MustNewDate(2006, 1, 2)
 	for i := 0; i < b.N; i++ {
 		_ = date.GoString()
 	}
 }
 
 func BenchmarkDateMarshalJSON(b *testing.B) {
-	date := MustNewDate(2006, 1, 2)
+	date := timex.MustNewDate(2006, 1, 2)
 
 	b.Run("Timex", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -74,7 +76,7 @@ func BenchmarkDateMarshalJSON(b *testing.B) {
 
 func BenchmarkDateUnmarshalJSON(b *testing.B) {
 	b.Run("Timex", func(b *testing.B) {
-		var date Date
+		var date timex.Date
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -98,54 +100,13 @@ func BenchmarkDateUnmarshalJSON(b *testing.B) {
 	})
 }
 
-func TestAppendInt(t *testing.T) {
-	tests := []struct {
-		n     int
-		width int
-		s     string
-	}{
-		{-12, 0, "-12"},
-		{-12, 1, "-12"},
-		{-12, 2, "-12"},
-		{-12, 3, "-012"},
-		{-12, 4, "-0012"},
-		{-1, 0, "-1"},
-		{-1, 1, "-1"},
-		{-1, 2, "-01"},
-		{-1, 3, "-001"},
-		{0, 0, "0"},
-		{0, 1, "0"},
-		{0, 2, "00"},
-		{0, 3, "000"},
-		{1, 0, "1"},
-		{1, 1, "1"},
-		{1, 2, "01"},
-		{1, 3, "001"},
-		{12, 0, "12"},
-		{12, 1, "12"},
-		{12, 2, "12"},
-		{12, 3, "012"},
-		{12, 4, "0012"},
-		{123, 0, "123"},
-		{123, 1, "123"},
-		{123, 2, "123"},
-		{123, 3, "123"},
-		{123, 4, "0123"},
-	}
-
-	for _, tt := range tests {
-		bytes := appendInt(nil, tt.n, tt.width)
-		assert.Equal(t, tt.s, string(bytes))
-	}
-}
-
 func TestParseDate(t *testing.T) {
 	tests := []struct {
 		layout string
 		value  string
 		unsafe bool
 	}{
-		{RFC3339, "2010-02-04", false},
+		{timex.RFC3339, "2010-02-04", false},
 		{"MMMM DD YYYY", "February 04 2010", false},
 		{"MMMM D, YYYY", "February 4, 2010", false},
 		{"MMM DD YYYY", "Feb 04 2010", false},
@@ -159,7 +120,7 @@ func TestParseDate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		date, err := ParseDate(tt.layout, tt.value)
+		date, err := timex.ParseDate(tt.layout, tt.value)
 		assert.NoError(t, err)
 
 		assert.Equal(t, 2010, date.Year())
@@ -168,14 +129,14 @@ func TestParseDate(t *testing.T) {
 	}
 
 	t.Run("Format", func(t *testing.T) {
-		dates := []Date{
-			MustNewDate(2010, 2, 4),
-			MustNewDate(1990, 2, 4), // Nineties year
+		dates := []timex.Date{
+			timex.MustNewDate(2010, 2, 4),
+			timex.MustNewDate(1990, 2, 4), // Nineties year
 		}
 
 		for _, tt := range tests {
 			for _, d1 := range dates {
-				d2, err := ParseDate(tt.layout, d1.Format(tt.layout))
+				d2, err := timex.ParseDate(tt.layout, d1.Format(tt.layout))
 				assert.NoError(t, err)
 
 				assert.Equal(t, d1, d2)
@@ -184,9 +145,9 @@ func TestParseDate(t *testing.T) {
 	})
 
 	t.Run("FormatUnsafe", func(t *testing.T) {
-		dates := []Date{
-			MustNewDate(0, 2, 4),    // Zero year
-			MustNewDate(-123, 2, 4), // Negative year
+		dates := []timex.Date{
+			timex.MustNewDate(0, 2, 4),    // Zero year
+			timex.MustNewDate(-123, 2, 4), // Negative year
 		}
 
 		for _, tt := range tests {
@@ -195,7 +156,7 @@ func TestParseDate(t *testing.T) {
 					continue
 				}
 
-				d2, err := ParseDate(tt.layout, d1.Format(tt.layout))
+				d2, err := timex.ParseDate(tt.layout, d1.Format(tt.layout))
 				assert.NoError(t, err)
 
 				assert.Equal(t, d1, d2)
@@ -204,11 +165,11 @@ func TestParseDate(t *testing.T) {
 	})
 
 	t.Run("FormatBigYear", func(t *testing.T) {
-		d1 := MustNewDate(-12345, 2, 4) // Big Negative year
-		d2 := MustNewDate(12345, 2, 4)  // Big Positive year
+		d1 := timex.MustNewDate(-12345, 2, 4) // Big Negative year
+		d2 := timex.MustNewDate(12345, 2, 4)  // Big Positive year
 
-		assert.Equal(t, "-12345-02-04", d1.Format(RFC3339))
-		assert.Equal(t, "12345-02-04", d2.Format(RFC3339))
+		assert.Equal(t, "-12345-02-04", d1.Format(timex.RFC3339))
+		assert.Equal(t, "12345-02-04", d2.Format(timex.RFC3339))
 	})
 }
 
@@ -218,8 +179,8 @@ func TestParseDateErrors(t *testing.T) {
 		value     string
 		errString string
 	}{
-		{RFC3339, "22-10-25", `parsing date "22-10-25" as "YYYY-MM-DD": cannot parse "22-10-25" as "YYYY"`},
-		{RFC3339, "12022-10-25", `parsing date "12022-10-25" as "YYYY-MM-DD": cannot parse "2-10-25" as "-"`},
+		{timex.RFC3339, "22-10-25", `parsing date "22-10-25" as "YYYY-MM-DD": cannot parse "22-10-25" as "YYYY"`},
+		{timex.RFC3339, "12022-10-25", `parsing date "12022-10-25" as "YYYY-MM-DD": cannot parse "2-10-25" as "-"`},
 		{" YYYY-MM-DD", "2010-02-04", `parsing date "2010-02-04" as " YYYY-MM-DD": cannot parse "2010-02-04" as " "`},
 		{" YYYY-MM-DD", "", `parsing date "" as " YYYY-MM-DD": cannot parse "" as "YYYY"`},
 		{"YY-MM-DD", "a2-10-25", `parsing date "a2-10-25" as "YY-MM-DD": cannot parse "a2-10-25" as "YY"`},
@@ -229,7 +190,7 @@ func TestParseDateErrors(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_, err := ParseDate(tt.layout, tt.value)
+		_, err := timex.ParseDate(tt.layout, tt.value)
 		assert.EqualError(t, err, tt.errString)
 	}
 }
@@ -239,7 +200,7 @@ func FuzzParseDate(f *testing.F) {
 	f.Add(" YYYY-MM-DD", "")
 	f.Fuzz(func(t *testing.T, layout, value string) {
 		assert.NotPanics(t, func() {
-			_, _ = ParseDate(layout, value)
+			_, _ = timex.ParseDate(layout, value)
 		})
 	})
 }
@@ -249,7 +210,7 @@ func FuzzDateFormat(f *testing.F) {
 	f.Add(0, " YYYY-MM-DD")
 	f.Fuzz(func(t *testing.T, n int, layout string) {
 		assert.NotPanics(t, func() {
-			date := Date{ordinal: n}
+			date := timex.Date{}.AddDays(n)
 			_ = date.Format(layout)
 		})
 	})
@@ -269,23 +230,23 @@ func TestDateString(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		date := MustNewDate(tt.year, tt.month, tt.day)
+		date := timex.MustNewDate(tt.year, tt.month, tt.day)
 		assert.Equal(t, tt.str, date.String())
 		assert.Equal(t, tt.goStr, date.GoString())
 	}
 }
 
 func TestDateMarshalJSON(t *testing.T) {
-	d1 := MustNewDate(2006, 1, 2)
+	d1 := timex.MustNewDate(2006, 1, 2)
 	bytes, err := d1.MarshalJSON()
 	assert.NoError(t, err)
 
-	var d2 Date
+	var d2 timex.Date
 	err = d2.UnmarshalJSON(bytes)
 	assert.NoError(t, err)
 	assert.Equal(t, d1, d2)
 
-	var d3 Date
+	var d3 timex.Date
 	err = d3.UnmarshalJSON([]byte("null"))
 	assert.NoError(t, err)
 	assert.True(t, d3.IsZero())
@@ -304,7 +265,7 @@ func TestDateMarshalJSONError(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		date := MustNewDate(tt.year, tt.month, tt.day)
+		date := timex.MustNewDate(tt.year, tt.month, tt.day)
 		_, err := date.MarshalJSON()
 		assert.EqualError(t, err, tt.errString)
 	}
@@ -324,7 +285,7 @@ func TestDateUnmarshalJSONError(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		var date Date
+		var date timex.Date
 		err := date.UnmarshalJSON([]byte(tt.s))
 		assert.EqualError(t, err, tt.errString)
 	}
