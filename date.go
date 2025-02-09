@@ -87,7 +87,7 @@ func (d Date) OrdinalDate() (year, dayOfYear int) {
 	return ordinalToOrdinalDate(d.ordinal)
 }
 
-// Date returns the date specified by d.
+// Date returns the year, month and day specified by d.
 func (d Date) Date() (year, month, day int) {
 	year, month, day = ordinalToCalendar(d.ordinal)
 	return
@@ -144,8 +144,8 @@ func (d Date) ISOWeek() (year, week int) {
 	return year, (dayOfYear-1)/7 + 1
 }
 
-// norm normalize the hi and lo into [1, base].
-func norm(hi, lo, base int) (int, int) {
+// norm1 normalize the hi and lo into [1, base].
+func norm1(hi, lo, base int) (int, int) {
 	if lo < 1 {
 		n := -(lo/base - 1)
 		lo += n * base
@@ -167,7 +167,7 @@ func (d Date) Add(years, months, days int) Date {
 	month += months
 	day += days
 
-	year, month = norm(year, month, 12)
+	year, month = norm1(year, month, 12)
 	n := ordinalBeforeYear(year)
 	n += daysBeforeMonth(year, month)
 	n += day
@@ -180,7 +180,7 @@ func (d Date) AddDays(days int) Date {
 	return Date{ordinal: d.ordinal + days}
 }
 
-// Sub returns the number of days since the date d to dd.
+// Sub returns the days d-dd.
 // If the result exceeds the integer scope, the maximum (or minimum) integer will be returned.
 func (d Date) Sub(dd Date) int {
 	days := d.ordinal - dd.ordinal
@@ -282,9 +282,9 @@ func calendarToOrdinal(year, month, day int) int {
 }
 
 func ordinalToOrdinalDate(n int) (year, dayOfYear int) {
-	n400, n := norm(0, n, daysEvery400Years)
-	n400, n = norm(n400, n+1, daysEvery400Years) // Shift for January 1 of year 1, prevent integer overflow.
-	year = n400*400 + 1                          // Start from year 1
+	n400, n := norm1(0, n, daysEvery400Years)
+	n400, n = norm1(n400, n+1, daysEvery400Years) // Shift for January 1 of year 1, prevent integer overflow.
+	year = n400*400 + 1                           // Start from year 1.
 
 	n100 := (n - 1) / daysEvery100Years
 	n100 -= n100 >> 2 // Handle the leap day every 400 years. If n100 is 4, set it to 3.
