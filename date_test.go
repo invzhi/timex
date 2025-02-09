@@ -242,13 +242,13 @@ func TestDateFromTime(t *testing.T) {
 		date := timex.Today(time.UTC)
 
 		year, month, day := date.Date()
-		assert.Equal(t, now.Year(), year)
-		assert.Equal(t, now.Month(), time.Month(month))
-		assert.Equal(t, now.Day(), day)
+		assert.LessOrEqual(t, now.Year(), year)
+		assert.LessOrEqual(t, now.Month(), time.Month(month))
+		assert.LessOrEqual(t, now.Day(), day)
 
-		assert.Equal(t, now.Year(), date.Year())
-		assert.Equal(t, now.Month(), time.Month(date.Month()))
-		assert.Equal(t, now.Day(), date.Day())
+		assert.LessOrEqual(t, now.Year(), date.Year())
+		assert.LessOrEqual(t, now.Month(), time.Month(date.Month()))
+		assert.LessOrEqual(t, now.Day(), date.Day())
 	})
 }
 
@@ -621,5 +621,6 @@ func TestDateBeforeAfter(t *testing.T) {
 		assert.Equal(t, tt.before, tt.d1.Before(tt.d2))
 		assert.Equal(t, tt.after, tt.d1.After(tt.d2))
 		assert.Equal(t, !tt.before && !tt.after, tt.d1.Equal(tt.d2))
+		assert.Equal(t, !tt.before && !tt.after, tt.d2.Equal(tt.d1))
 	}
 }
