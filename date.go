@@ -7,11 +7,9 @@ import (
 	"time"
 )
 
-// Date represents a date.
+// Date represents a specific day in Gregorian calendar.
 //
 // The zero value of type Date is January 1 of year 1.
-//
-// swagger:strfmt date
 type Date struct {
 	ordinal int // ordinal represents days since January 1 of year 1.
 }

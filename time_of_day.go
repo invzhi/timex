@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// TimeOfDay represents a time of day.
+// TimeOfDay represents a specific time in a day.
 type TimeOfDay struct {
 	n int64
 }

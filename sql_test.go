@@ -28,7 +28,7 @@ func TestDateScan(t *testing.T) {
 		err := date.Scan(tt.value)
 		assert.NoError(t, err)
 
-		assert.Equal(t, tt.s, date.Format(timex.RFC3339))
+		assert.Equal(t, tt.s, date.Format(timex.RFC3339Date))
 	}
 
 	t.Run("NullDate", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestDateScan(t *testing.T) {
 			err = date.Scan(tt.value)
 			assert.NoError(t, err)
 
-			assert.Equal(t, tt.s, date.Date.Format(timex.RFC3339))
+			assert.Equal(t, tt.s, date.Date.Format(timex.RFC3339Date))
 			assert.True(t, date.Valid)
 		}
 	})

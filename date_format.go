@@ -1,9 +1,6 @@
 package timex
 
-import (
-	"errors"
-	"fmt"
-)
+import "errors"
 
 const (
 	tokenYearTwoDigit = iota + 1
@@ -17,7 +14,10 @@ const (
 )
 
 const (
-	RFC3339 = "YYYY-MM-DD"
+	// Deprecated: Use [RFC3339Date] instead.
+	RFC3339 = RFC3339Date
+
+	RFC3339Date = "YYYY-MM-DD"
 )
 
 var monthShortNames = []string{
@@ -50,23 +50,7 @@ var monthLongNames = []string{
 	"December",
 }
 
-// ParseError describes a problem parsing a date string.
-type ParseError struct {
-	Layout     string
-	Value      string
-	LayoutElem string
-	ValueElem  string
-}
-
-// Error returns the string representation of a ParseError.
-func (e *ParseError) Error() string {
-	if len(e.LayoutElem) == 0 && len(e.ValueElem) == 0 {
-		return fmt.Sprintf("parsing date %q as %q", e.Value, e.Layout)
-	}
-	return fmt.Sprintf("parsing date %q as %q: cannot parse %q as %q", e.Value, e.Layout, e.ValueElem, e.LayoutElem)
-}
-
-func nextToken(layout string) (prefix string, token int, suffix string) {
+func nextDateToken(layout string) (prefix string, token int, suffix string) {
 	for i := 0; i < len(layout); i++ {
 		switch layout[i] {
 		case 'Y': // YY, YYYY
@@ -101,9 +85,9 @@ func nextToken(layout string) (prefix string, token int, suffix string) {
 	return layout, 0, ""
 }
 
-func parseStrictRFC3339(b []byte) (Date, error) {
-	if len(b) < len(RFC3339) {
-		return Date{}, &ParseError{Layout: RFC3339, Value: string(b)}
+func parseStrictRFC3339Date(b []byte) (Date, error) {
+	if len(b) < len(RFC3339Date) {
+		return Date{}, &ParseError{Layout: RFC3339Date, Value: string(b)}
 	}
 
 	ok := true
@@ -122,7 +106,7 @@ func parseStrictRFC3339(b []byte) (Date, error) {
 	month := parseUint(b[5:7])
 	day := parseUint(b[8:10])
 	if !ok || b[4] != '-' || b[7] != '-' {
-		return Date{}, &ParseError{Layout: RFC3339, Value: string(b)}
+		return Date{}, &ParseError{Layout: RFC3339Date, Value: string(b)}
 	}
 
 	return NewDate(year, month, day)
@@ -144,7 +128,7 @@ func ParseDate(layout, value string) (Date, error) {
 	originLayout, originValue := layout, value
 	var layoutElem, valueElem string
 	for {
-		prefix, token, suffix := nextToken(layout)
+		prefix, token, suffix := nextDateToken(layout)
 		if token == 0 {
 			break
 		}
@@ -179,11 +163,13 @@ func ParseDate(layout, value string) (Date, error) {
 		case tokenMonthTwoDigit:
 			month, value, ok = atoi(value, 2, 2)
 		case tokenMonthShortName:
-			month, value, ok = searchName(monthShortNames, value)
-			month++
+			var index int
+			index, value, ok = searchName(monthShortNames, value)
+			month = index + 1
 		case tokenMonthLongName:
-			month, value, ok = searchName(monthLongNames, value)
-			month++
+			var index int
+			index, value, ok = searchName(monthLongNames, value)
+			month = index + 1
 		case tokenDayOfMonth:
 			day, value, ok = atoi(value, 1, 2)
 		case tokenDayOfMonthTwoDigit:
@@ -228,7 +214,7 @@ func (d Date) format(layout string) string {
 	bytes := make([]byte, 0, len(layout)+10)
 
 	for {
-		prefix, token, suffix := nextToken(layout)
+		prefix, token, suffix := nextDateToken(layout)
 		bytes = append(bytes, prefix...)
 		if token == 0 {
 			break
@@ -271,8 +257,8 @@ func (d Date) format(layout string) string {
 //	DD    01-31             Day of month, 2-digits
 func (d Date) Format(layout string) string {
 	switch layout {
-	case RFC3339:
-		b := make([]byte, 0, len(RFC3339))
+	case RFC3339Date:
+		b := make([]byte, 0, len(RFC3339Date))
 		b = d.appendRFC3339(b)
 		return string(b)
 	default:
@@ -282,7 +268,7 @@ func (d Date) Format(layout string) string {
 
 // String returns the textual representation of the date.
 func (d Date) String() string {
-	return d.Format(RFC3339)
+	return d.Format(RFC3339Date)
 }
 
 // GoString returns the Go syntax of the date.
@@ -299,6 +285,7 @@ func (d Date) GoString() string {
 
 	bytes = append(bytes, ", "...)
 	bytes = appendInt(bytes, day, 0)
+
 	bytes = append(bytes, ')')
 
 	return string(bytes)
@@ -307,7 +294,7 @@ func (d Date) GoString() string {
 // MarshalJSON implements the json.Marshaler interface.
 // The date is a quoted string in RFC 3339 format.
 func (d Date) MarshalJSON() ([]byte, error) {
-	b := make([]byte, 0, len(RFC3339)+2)
+	b := make([]byte, 0, len(RFC3339Date)+2)
 	b = append(b, '"')
 	b, err := d.appendStrictRFC3339(b)
 	if err != nil {
@@ -328,6 +315,6 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*d, err = parseStrictRFC3339(data[1 : len(data)-1])
+	*d, err = parseStrictRFC3339Date(data[1 : len(data)-1])
 	return err
 }

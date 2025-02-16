@@ -106,7 +106,7 @@ func TestParseDate(t *testing.T) {
 		value  string
 		unsafe bool
 	}{
-		{timex.RFC3339, "2010-02-04", false},
+		{timex.RFC3339Date, "2010-02-04", false},
 		{"MMMM DD YYYY", "February 04 2010", false},
 		{"MMMM D, YYYY", "February 4, 2010", false},
 		{"MMM DD YYYY", "Feb 04 2010", false},
@@ -168,8 +168,8 @@ func TestParseDate(t *testing.T) {
 		d1 := timex.MustNewDate(-12345, 2, 4) // Big Negative year
 		d2 := timex.MustNewDate(12345, 2, 4)  // Big Positive year
 
-		assert.Equal(t, "-12345-02-04", d1.Format(timex.RFC3339))
-		assert.Equal(t, "12345-02-04", d2.Format(timex.RFC3339))
+		assert.Equal(t, "-12345-02-04", d1.Format(timex.RFC3339Date))
+		assert.Equal(t, "12345-02-04", d2.Format(timex.RFC3339Date))
 	})
 }
 
@@ -179,14 +179,14 @@ func TestParseDateErrors(t *testing.T) {
 		value     string
 		errString string
 	}{
-		{timex.RFC3339, "22-10-25", `parsing date "22-10-25" as "YYYY-MM-DD": cannot parse "22-10-25" as "YYYY"`},
-		{timex.RFC3339, "12022-10-25", `parsing date "12022-10-25" as "YYYY-MM-DD": cannot parse "2-10-25" as "-"`},
-		{" YYYY-MM-DD", "2010-02-04", `parsing date "2010-02-04" as " YYYY-MM-DD": cannot parse "2010-02-04" as " "`},
-		{" YYYY-MM-DD", "", `parsing date "" as " YYYY-MM-DD": cannot parse "" as "YYYY"`},
-		{"YY-MM-DD", "a2-10-25", `parsing date "a2-10-25" as "YY-MM-DD": cannot parse "a2-10-25" as "YY"`},
-		{"YY-M-DD", "22-a0-25", `parsing date "22-a0-25" as "YY-M-DD": cannot parse "a0-25" as "M"`},
-		{"D MMM YY", "4 --- 00", `parsing date "4 --- 00" as "D MMM YY": cannot parse "--- 00" as "MMM"`},
-		{"D MMMM YY", "4 --- 00", `parsing date "4 --- 00" as "D MMMM YY": cannot parse "--- 00" as "MMMM"`},
+		{timex.RFC3339Date, "22-10-25", `parsing "22-10-25" as "YYYY-MM-DD": cannot parse "22-10-25" as "YYYY"`},
+		{timex.RFC3339Date, "12022-10-25", `parsing "12022-10-25" as "YYYY-MM-DD": cannot parse "2-10-25" as "-"`},
+		{" YYYY-MM-DD", "2010-02-04", `parsing "2010-02-04" as " YYYY-MM-DD": cannot parse "2010-02-04" as " "`},
+		{" YYYY-MM-DD", "", `parsing "" as " YYYY-MM-DD": cannot parse "" as "YYYY"`},
+		{"YY-MM-DD", "a2-10-25", `parsing "a2-10-25" as "YY-MM-DD": cannot parse "a2-10-25" as "YY"`},
+		{"YY-M-DD", "22-a0-25", `parsing "22-a0-25" as "YY-M-DD": cannot parse "a0-25" as "M"`},
+		{"D MMM YY", "4 --- 00", `parsing "4 --- 00" as "D MMM YY": cannot parse "--- 00" as "MMM"`},
+		{"D MMMM YY", "4 --- 00", `parsing "4 --- 00" as "D MMMM YY": cannot parse "--- 00" as "MMMM"`},
 	}
 
 	for _, tt := range tests {
@@ -277,11 +277,11 @@ func TestDateUnmarshalJSONError(t *testing.T) {
 		errString string
 	}{
 		{`2006-01-02`, `Date.UnmarshalJSON: input is not a JSON string`},
-		{`"-1-01-02"`, `parsing date "-1-01-02" as "YYYY-MM-DD"`},
-		{`"10000-01-02"`, `parsing date "10000-01-02" as "YYYY-MM-DD"`},
-		{`"12345-01-02"`, `parsing date "12345-01-02" as "YYYY-MM-DD"`},
-		{`"2006+01+02"`, `parsing date "2006+01+02" as "YYYY-MM-DD"`},
-		{`"YYYY-01-02"`, `parsing date "YYYY-01-02" as "YYYY-MM-DD"`},
+		{`"-1-01-02"`, `parsing "-1-01-02" as "YYYY-MM-DD"`},
+		{`"10000-01-02"`, `parsing "10000-01-02" as "YYYY-MM-DD"`},
+		{`"12345-01-02"`, `parsing "12345-01-02" as "YYYY-MM-DD"`},
+		{`"2006+01+02"`, `parsing "2006+01+02" as "YYYY-MM-DD"`},
+		{`"YYYY-01-02"`, `parsing "YYYY-01-02" as "YYYY-MM-DD"`},
 	}
 
 	for _, tt := range tests {

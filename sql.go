@@ -10,9 +10,9 @@ import (
 func (d *Date) Scan(value interface{}) (err error) {
 	switch v := value.(type) {
 	case []byte:
-		*d, err = ParseDate(RFC3339, string(v))
+		*d, err = ParseDate(RFC3339Date, string(v))
 	case string:
-		*d, err = ParseDate(RFC3339, v)
+		*d, err = ParseDate(RFC3339Date, v)
 	case time.Time:
 		*d = DateFromTime(v)
 	default:
@@ -23,13 +23,11 @@ func (d *Date) Scan(value interface{}) (err error) {
 
 // Value implements the driver.Valuer interface.
 func (d Date) Value() (driver.Value, error) {
-	return d.Format(RFC3339), nil
+	return d.Format(RFC3339Date), nil
 }
 
-// NullDate represents a Date that may be null.
+// NullDate represents a specific day in Gregorian calendar that may be null.
 // NullDate implements the sql.Scanner interface, so it can be used as a scan destination, similar to sql.NullString.
-//
-// swagger:strfmt date
 type NullDate struct {
 	Date  Date
 	Valid bool // Valid is true if Date is not NULL
