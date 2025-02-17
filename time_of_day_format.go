@@ -60,10 +60,6 @@ func nextTimeToken(layout string) (prefix string, token int, suffix string) {
 }
 
 func parseStrictRFC3339Time(b []byte) (TimeOfDay, error) {
-	if len(b) < len(RFC3339Time) {
-		return TimeOfDay{}, &ParseError{Layout: RFC3339Time, Value: string(b)}
-	}
-
 	ok := true
 	parseUint := func(s []byte) (n int) {
 		for _, c := range s {
@@ -78,12 +74,15 @@ func parseStrictRFC3339Time(b []byte) (TimeOfDay, error) {
 
 	hour := parseUint(b[0:2])
 	min := parseUint(b[3:5])
-	sec := parseUint(b[6:8])
 	if !ok || b[2] != ':' || b[5] != ':' {
 		return TimeOfDay{}, &ParseError{Layout: RFC3339Time, Value: string(b)}
 	}
+	sec, nsec, _, ok := atof(string(b[6:]), 2, 2, 9)
+	if !ok {
+		return TimeOfDay{}, &ParseError{Layout: RFC3339Time, Value: string(b)}
+	}
 
-	return NewTimeOfDay(hour, min, sec, 0)
+	return NewTimeOfDay(hour, min, sec, nsec)
 }
 
 // ParseTimeOfDay parses a formatted string and returns the time of day it represents.
@@ -96,10 +95,10 @@ func parseStrictRFC3339Time(b []byte) (TimeOfDay, error) {
 //	hh  01-12  Hour, 12-hour clock
 //	m    0-59  Minute
 //	mm  00-59  Minute, 2-digits
-//	s    0-59  Second
-//	ss  00-59  Second, 2-digits
+//	s    0-59  Second, including fraction
+//	ss  00-59  Second, 2-digits, including fraction
 func ParseTimeOfDay(layout, value string) (TimeOfDay, error) {
-	var hour, min, sec int
+	var hour, min, sec, nsec int
 	var amSet, pmSet bool
 
 	originLayout, originValue := layout, value
@@ -153,9 +152,9 @@ func ParseTimeOfDay(layout, value string) (TimeOfDay, error) {
 		case tokenMinuteTwoDigit:
 			min, value, ok = atoi(value, 2, 2)
 		case tokenSecond:
-			sec, value, ok = atoi(value, 1, 2)
+			sec, nsec, value, ok = atof(value, 1, 2, 9)
 		case tokenSecondTwoDigit:
-			sec, value, ok = atoi(value, 2, 2)
+			sec, nsec, value, ok = atof(value, 2, 2, 9)
 		}
 
 		if !ok {
@@ -169,17 +168,18 @@ func ParseTimeOfDay(layout, value string) (TimeOfDay, error) {
 		hour += 12
 	}
 
-	return NewTimeOfDay(hour, min, sec, 0)
+	return NewTimeOfDay(hour, min, sec, nsec)
 }
 
 func (t TimeOfDay) appendRFC3339(b []byte) []byte {
-	hour, min, sec, _ := nanosecondsToTime(t.n)
+	hour, min, sec, nsec := nanosecondsToTime(t.n)
 
 	b = appendInt(b, hour, 2)
 	b = append(b, ':')
 	b = appendInt(b, min, 2)
 	b = append(b, ':')
 	b = appendInt(b, sec, 2)
+	b = appendFraction(b, nsec, 9)
 	return b
 }
 
@@ -201,7 +201,7 @@ func midday(hour int, am, pm string) string {
 }
 
 func (t TimeOfDay) format(layout string) string {
-	hour, min, sec, _ := nanosecondsToTime(t.n)
+	hour, min, sec, nsec := nanosecondsToTime(t.n)
 	bytes := make([]byte, 0, len(layout)+10)
 
 	for {
@@ -232,8 +232,10 @@ func (t TimeOfDay) format(layout string) string {
 			bytes = appendInt(bytes, min, 2)
 		case tokenSecond:
 			bytes = appendInt(bytes, sec, 0)
+			bytes = appendFraction(bytes, nsec, 9)
 		case tokenSecondTwoDigit:
 			bytes = appendInt(bytes, sec, 2)
+			bytes = appendFraction(bytes, nsec, 9)
 		}
 	}
 

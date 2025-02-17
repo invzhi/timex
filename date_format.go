@@ -86,7 +86,7 @@ func nextDateToken(layout string) (prefix string, token int, suffix string) {
 }
 
 func parseStrictRFC3339Date(b []byte) (Date, error) {
-	if len(b) < len(RFC3339Date) {
+	if len(b) != len(RFC3339Date) {
 		return Date{}, &ParseError{Layout: RFC3339Date, Value: string(b)}
 	}
 

@@ -13,14 +13,14 @@ func TestParseTimeOfDay(t *testing.T) {
 		layout string
 		value  string
 	}{
-		{timex.RFC3339Time, "15:04:05"},
-		{"HHmmss", "150405"},
-		{"H:m:s", "15:4:5"},
-		{"hh:mm:ssA", "03:04:05PM"},
-		{"hh:mm:ssa", "03:04:05pm"},
-		{"h:m:sa", "3:4:5pm"},
+		{timex.RFC3339Time, "15:04:05.000000006"},
+		{"HHmmss", "150405.000000006"},
+		{"H:m:s", "15:4:5.000000006"},
+		{"hh:mm:ssA", "03:04:05.000000006PM"},
+		{"hh:mm:ssa", "03:04:05.000000006pm"},
+		{"h:m:sa", "3:4:5.000000006pm"},
 		// Chinese
-		{"HH时m分s秒", "15时4分5秒"},
+		{"HH时m分s秒", "15时4分5.000000006秒"},
 	}
 
 	for _, tt := range tests {
@@ -30,13 +30,19 @@ func TestParseTimeOfDay(t *testing.T) {
 		assert.Equal(t, 15, timeOfDay.Hour())
 		assert.Equal(t, 4, timeOfDay.Minute())
 		assert.Equal(t, 5, timeOfDay.Second())
+		assert.Equal(t, 6, timeOfDay.Nanosecond())
 	}
 
 	t.Run("Format", func(t *testing.T) {
 		ts := []timex.TimeOfDay{
 			timex.MustNewTimeOfDay(0, 0, 0, 0),
-			timex.MustNewTimeOfDay(3, 4, 5, 0),
+			timex.MustNewTimeOfDay(3, 0, 0, 0),
+			timex.MustNewTimeOfDay(12, 0, 0, 0),
 			timex.MustNewTimeOfDay(15, 4, 5, 0),
+			timex.MustNewTimeOfDay(15, 4, 5, 1e8),
+			timex.MustNewTimeOfDay(15, 4, 5, 2e7),
+			timex.MustNewTimeOfDay(15, 4, 5, 6780),
+			timex.MustNewTimeOfDay(23, 59, 59, 1e9-1),
 		}
 
 		for _, tt := range tests {
@@ -98,10 +104,13 @@ func TestTimeOfDayString(t *testing.T) {
 		str, goStr           string
 	}{
 		{0, 0, 0, 0, "00:00:00", "timex.MustNewTimeOfDay(0, 0, 0, 0)"},
-		{10, 0, 0, 0, "10:00:00", "timex.MustNewTimeOfDay(10, 0, 0, 0)"},
+		{3, 0, 0, 0, "03:00:00", "timex.MustNewTimeOfDay(3, 0, 0, 0)"},
 		{12, 0, 0, 0, "12:00:00", "timex.MustNewTimeOfDay(12, 0, 0, 0)"},
 		{15, 04, 05, 0, "15:04:05", "timex.MustNewTimeOfDay(15, 4, 5, 0)"},
-		{23, 59, 59, 1e9 - 1, "23:59:59", "timex.MustNewTimeOfDay(23, 59, 59, 999999999)"},
+		{15, 04, 05, 1e8, "15:04:05.1", "timex.MustNewTimeOfDay(15, 4, 5, 100000000)"},
+		{15, 04, 05, 2e7, "15:04:05.02", "timex.MustNewTimeOfDay(15, 4, 5, 20000000)"},
+		{15, 04, 05, 6780, "15:04:05.00000678", "timex.MustNewTimeOfDay(15, 4, 5, 6780)"},
+		{23, 59, 59, 1e9 - 1, "23:59:59.999999999", "timex.MustNewTimeOfDay(23, 59, 59, 999999999)"},
 	}
 
 	for _, tt := range tests {
@@ -135,6 +144,7 @@ func TestTimeOfDayUnmarshalJSONError(t *testing.T) {
 		{`15:04:05`, `TimeOfDay.UnmarshalJSON: input is not a JSON string`},
 		{`"3:04:05"`, `parsing "3:04:05" as "HH:mm:ss"`},
 		{`"-3:04:05"`, `parsing "-3:04:05" as "HH:mm:ss"`},
+		{`"15:04:5"`, `parsing "15:04:5" as "HH:mm:ss"`},
 		{`"100:04:05"`, `parsing "100:04:05" as "HH:mm:ss"`},
 		{`"12345:04:05"`, `parsing "12345:04:05" as "HH:mm:ss"`},
 		{`"15.04.05"`, `parsing "15.04.05" as "HH:mm:ss"`},

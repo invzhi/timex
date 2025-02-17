@@ -126,3 +126,60 @@ func appendInt(b []byte, n int, min int) []byte {
 
 	return b
 }
+
+// atof converts a string to integer and its fraction part with specific digit length.
+func atof(s string, min, max, fraction int) (int, int, string, bool) {
+	m, s, ok := atoi(s, min, max)
+	if !ok || len(s) == 0 || s[0] != '.' {
+		return m, 0, s, ok
+	}
+	s = s[1:]
+
+	var n, index int
+	for ; index < len(s) && index < fraction; index++ {
+		c := s[index]
+		if !isDigit(c) {
+			break
+		}
+
+		n = n*10 + fromDigit(c)
+	}
+	for i := index; i < fraction; i++ {
+		n *= 10
+	}
+
+	return m, n, s[index:], true
+}
+
+// appendFraction appends the fractional part of integer with specified maximum digit length.
+func appendFraction(b []byte, n int, max int) []byte {
+	if n == 0 {
+		return b
+	}
+
+	width := max
+	for ; n%10 == 0; n /= 10 {
+		width--
+	}
+	if width <= 0 {
+		return b
+	}
+
+	width++ // Decimal point.
+	if len(b)+width <= cap(b) {
+		b = b[:len(b)+width]
+	} else {
+		b = append(b, make([]byte, width)...)
+	}
+
+	b[len(b)-width] = '.'
+	for i := 0; i < width-1; i++ {
+		index := len(b) - 1 - i
+
+		next := n / 10
+		b[index] = toDigit(n - next*10)
+		n = next
+	}
+
+	return b
+}

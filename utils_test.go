@@ -46,3 +46,44 @@ func TestAppendInt(t *testing.T) {
 		assert.Equal(t, tt.s, string(bytes))
 	}
 }
+
+func TestAppendFraction(t *testing.T) {
+	tests := []struct {
+		n     int
+		width int
+		s     string
+	}{
+		{0, 0, ""},
+		{0, 1, ""},
+		{0, 2, ""},
+		{0, 3, ""},
+		{1, 0, ""},
+		{1, 1, ".1"},
+		{1, 2, ".01"},
+		{1, 3, ".001"},
+		{10, 0, ""},
+		{10, 1, ""},
+		{10, 2, ".1"},
+		{10, 3, ".01"},
+		{12, 0, ""},
+		{12, 1, ".2"},
+		{12, 2, ".12"},
+		{12, 3, ".012"},
+		{12, 4, ".0012"},
+		{100, 0, ""},
+		{100, 1, ""},
+		{100, 2, ""},
+		{100, 3, ".1"},
+		{100, 4, ".01"},
+		{123, 0, ""},
+		{123, 1, ".3"},
+		{123, 2, ".23"},
+		{123, 3, ".123"},
+		{123, 4, ".0123"},
+	}
+
+	for _, tt := range tests {
+		bytes := appendFraction(nil, tt.n, tt.width)
+		assert.Equal(t, tt.s, string(bytes))
+	}
+}
