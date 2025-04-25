@@ -12,7 +12,7 @@
 - Don't rely on type `time.Time`, avoid timezone-related issues.
 - Represent date format like `YYYY-MM-DD` instead of `2006-01-02`.
 - Working with date type of MySQL or PostgreSQL directly.
-- Fast methods implementation of `Date` relative to `time.Time`.
+- Fast method implementations of `Date` relative to `time.Time`.
 
 | Method        | package timex | package time |
 |:--------------|--------------:|-------------:|
@@ -35,7 +35,7 @@
     - Working with standard library: conversion with type `time.Time`.
     - Parsing & Formatting: conversion with formatted strings.
     - Getter: get year, quarter, month, day of year, day of month, day of week.
-    - Manipulation: addition and subtraction with years, month, days.
+    - Manipulation: addition and subtraction with years, months, days.
     - Comparison: comparing dates with `Before`, `After`, `Equal`.
     - Serialization: JSON and database.
 
