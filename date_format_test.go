@@ -252,6 +252,32 @@ func TestDateMarshalJSON(t *testing.T) {
 	assert.True(t, d3.IsZero())
 }
 
+func TestStringDateMarshalJSON(t *testing.T) {
+	var d1 timex.StringDate
+	bytes, err := d1.MarshalJSON()
+	assert.NoError(t, err)
+	assert.Equal(t, `""`, string(bytes))
+
+	d2 := timex.StringDate{Date: timex.MustNewDate(2006, 1, 2)}
+	bytes, err = d2.MarshalJSON()
+	assert.NoError(t, err)
+
+	var d3 timex.StringDate
+	err = d3.UnmarshalJSON(bytes)
+	assert.NoError(t, err)
+	assert.Equal(t, d2, d3)
+
+	var d4 timex.StringDate
+	err = d4.UnmarshalJSON([]byte(`""`))
+	assert.NoError(t, err)
+	assert.True(t, d4.Date.IsZero())
+
+	var d5 timex.StringDate
+	err = d5.UnmarshalJSON([]byte("null"))
+	assert.NoError(t, err)
+	assert.True(t, d5.Date.IsZero())
+}
+
 func TestDateMarshalJSONError(t *testing.T) {
 	tests := []struct {
 		year, month, day int
@@ -277,6 +303,7 @@ func TestDateUnmarshalJSONError(t *testing.T) {
 		errString string
 	}{
 		{`2006-01-02`, `Date.UnmarshalJSON: input is not a JSON string`},
+		{`""`, `parsing "" as "YYYY-MM-DD"`},
 		{`"-1-01-02"`, `parsing "-1-01-02" as "YYYY-MM-DD"`},
 		{`"10000-01-02"`, `parsing "10000-01-02" as "YYYY-MM-DD"`},
 		{`"12345-01-02"`, `parsing "12345-01-02" as "YYYY-MM-DD"`},

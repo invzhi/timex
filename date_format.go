@@ -318,3 +318,26 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 	*d, err = parseStrictRFC3339Date(data[1 : len(data)-1])
 	return err
 }
+
+// StringDate is a wrapper of Date that represents zero date as empty string in JSON.
+type StringDate struct {
+	Date Date
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// The string date is an empty string or a quoted string in RFC 3339 format.
+func (d StringDate) MarshalJSON() ([]byte, error) {
+	if d.Date.IsZero() {
+		return []byte(`""`), nil
+	}
+	return d.Date.MarshalJSON()
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// The string date is expected to be an empty string or a quoted string in RFC 3339 format.
+func (d *StringDate) UnmarshalJSON(data []byte) error {
+	if string(data) == `""` {
+		return nil
+	}
+	return d.Date.UnmarshalJSON(data)
+}
