@@ -237,45 +237,71 @@ func TestDateString(t *testing.T) {
 }
 
 func TestDateMarshalJSON(t *testing.T) {
-	d1 := timex.MustNewDate(2006, 1, 2)
-	bytes, err := d1.MarshalJSON()
-	assert.NoError(t, err)
+	tests := []struct {
+		year, month, day int
+	}{
+		{2006, 1, 2},
+		{1, 12, 11},
+		{0, 1, 2},
+	}
 
-	var d2 timex.Date
-	err = d2.UnmarshalJSON(bytes)
-	assert.NoError(t, err)
-	assert.Equal(t, d1, d2)
+	for _, tt := range tests {
+		d1 := timex.MustNewDate(tt.year, tt.month, tt.day)
+		bytes, err := d1.MarshalJSON()
+		assert.NoError(t, err)
 
-	var d3 timex.Date
-	err = d3.UnmarshalJSON([]byte("null"))
-	assert.NoError(t, err)
-	assert.True(t, d3.IsZero())
+		var d2 timex.Date
+		err = d2.UnmarshalJSON(bytes)
+		assert.NoError(t, err)
+		assert.Equal(t, d1, d2)
+	}
+
+	t.Run("Null", func(t *testing.T) {
+		var date timex.Date
+		err := date.UnmarshalJSON([]byte("null"))
+		assert.NoError(t, err)
+		assert.True(t, date.IsZero())
+	})
 }
 
 func TestStringDateMarshalJSON(t *testing.T) {
-	var d1 timex.StringDate
-	bytes, err := d1.MarshalJSON()
-	assert.NoError(t, err)
-	assert.Equal(t, `""`, string(bytes))
+	tests := []struct {
+		year, month, day int
+	}{
+		{2006, 1, 2},
+		{1, 12, 11},
+		{0, 1, 2},
+	}
 
-	d2 := timex.StringDate{Date: timex.MustNewDate(2006, 1, 2)}
-	bytes, err = d2.MarshalJSON()
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		d1 := timex.StringDate{Date: timex.MustNewDate(tt.year, tt.month, tt.day)}
+		bytes, err := d1.MarshalJSON()
+		assert.NoError(t, err)
 
-	var d3 timex.StringDate
-	err = d3.UnmarshalJSON(bytes)
-	assert.NoError(t, err)
-	assert.Equal(t, d2, d3)
+		var d2 timex.StringDate
+		err = d2.UnmarshalJSON(bytes)
+		assert.NoError(t, err)
+		assert.Equal(t, d1, d2)
+	}
 
-	var d4 timex.StringDate
-	err = d4.UnmarshalJSON([]byte(`""`))
-	assert.NoError(t, err)
-	assert.True(t, d4.Date.IsZero())
+	t.Run("Null", func(t *testing.T) {
+		var date timex.StringDate
+		err := date.UnmarshalJSON([]byte("null"))
+		assert.NoError(t, err)
+		assert.True(t, date.Date.IsZero())
+	})
 
-	var d5 timex.StringDate
-	err = d5.UnmarshalJSON([]byte("null"))
-	assert.NoError(t, err)
-	assert.True(t, d5.Date.IsZero())
+	t.Run("EmptyString", func(t *testing.T) {
+		var d1 timex.StringDate
+		bytes, err := d1.MarshalJSON()
+		assert.NoError(t, err)
+		assert.Equal(t, `""`, string(bytes))
+
+		var d2 timex.StringDate
+		err = d2.UnmarshalJSON(bytes)
+		assert.NoError(t, err)
+		assert.True(t, d2.Date.IsZero())
+	})
 }
 
 func TestDateMarshalJSONError(t *testing.T) {
@@ -316,4 +342,13 @@ func TestDateUnmarshalJSONError(t *testing.T) {
 		err := date.UnmarshalJSON([]byte(tt.s))
 		assert.EqualError(t, err, tt.errString)
 	}
+}
+
+func FuzzDateUnmarshalJSON(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		assert.NotPanics(t, func() {
+			var date timex.Date
+			_ = date.UnmarshalJSON(data)
+		})
+	})
 }

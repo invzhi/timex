@@ -60,6 +60,10 @@ func nextTimeToken(layout string) (prefix string, token int, suffix string) {
 }
 
 func parseStrictRFC3339Time(b []byte) (TimeOfDay, error) {
+	if len(b) < 6 {
+		return TimeOfDay{}, &ParseError{Layout: RFC3339Time, Value: string(b)}
+	}
+
 	ok := true
 	parseUint := func(s []byte) (n int) {
 		for _, c := range s {

@@ -121,19 +121,36 @@ func TestTimeOfDayString(t *testing.T) {
 }
 
 func TestTimeOfDayMarshalJSON(t *testing.T) {
-	t1 := timex.MustNewTimeOfDay(15, 4, 5, 0)
-	bytes, err := t1.MarshalJSON()
-	assert.NoError(t, err)
+	tests := []struct {
+		hour, min, sec, nsec int
+	}{
+		{0, 0, 0, 0},
+		{3, 0, 0, 0},
+		{12, 0, 0, 0},
+		{15, 04, 05, 0},
+		{15, 04, 05, 1e8},
+		{15, 04, 05, 2e7},
+		{15, 04, 05, 6780},
+		{23, 59, 59, 1e9 - 1},
+	}
 
-	var t2 timex.TimeOfDay
-	err = t2.UnmarshalJSON(bytes)
-	assert.NoError(t, err)
-	assert.Equal(t, t1, t2)
+	for _, tt := range tests {
+		t1 := timex.MustNewTimeOfDay(tt.hour, tt.min, tt.sec, tt.nsec)
+		bytes, err := t1.MarshalJSON()
+		assert.NoError(t, err)
 
-	var t3 timex.TimeOfDay
-	err = t3.UnmarshalJSON([]byte("null"))
-	assert.NoError(t, err)
-	assert.True(t, t3.IsZero())
+		var t2 timex.TimeOfDay
+		err = t2.UnmarshalJSON(bytes)
+		assert.NoError(t, err)
+		assert.Equal(t, t1, t2)
+	}
+
+	t.Run("Null", func(t *testing.T) {
+		var timeOfDay timex.TimeOfDay
+		err := timeOfDay.UnmarshalJSON([]byte("null"))
+		assert.NoError(t, err)
+		assert.True(t, timeOfDay.IsZero())
+	})
 }
 
 func TestTimeOfDayUnmarshalJSONError(t *testing.T) {
@@ -142,6 +159,7 @@ func TestTimeOfDayUnmarshalJSONError(t *testing.T) {
 		errString string
 	}{
 		{`15:04:05`, `TimeOfDay.UnmarshalJSON: input is not a JSON string`},
+		{`""`, `parsing "" as "HH:mm:ss"`},
 		{`"3:04:05"`, `parsing "3:04:05" as "HH:mm:ss"`},
 		{`"-3:04:05"`, `parsing "-3:04:05" as "HH:mm:ss"`},
 		{`"15:04:5"`, `parsing "15:04:5" as "HH:mm:ss"`},
@@ -157,4 +175,13 @@ func TestTimeOfDayUnmarshalJSONError(t *testing.T) {
 		err := timeOfDay.UnmarshalJSON([]byte(tt.s))
 		assert.EqualError(t, err, tt.errString)
 	}
+}
+
+func FuzzTimeOfDayUnmarshalJSON(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		assert.NotPanics(t, func() {
+			var timeOfDay timex.TimeOfDay
+			_ = timeOfDay.UnmarshalJSON(data)
+		})
+	})
 }
