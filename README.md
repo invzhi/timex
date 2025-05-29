@@ -4,29 +4,19 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/invzhi/timex)](https://goreportcard.com/report/github.com/invzhi/timex)
 [![codecov](https://codecov.io/gh/invzhi/timex/branch/main/graph/badge.svg?token=I2M6JCGY84)](https://codecov.io/gh/invzhi/timex)
 
-📅 A Go package for working with date.
+📅 A Go package for working with date and time of day.
 
 ## Why use timex?
 
 - Self-contained type `Date`, focusing on date-specific operations.
-- Don't rely on type `time.Time`, avoid timezone-related issues.
-- Represent date format like `YYYY-MM-DD` instead of `2006-01-02`.
-- Working with date type of MySQL or PostgreSQL directly.
-- Fast method implementations of `Date` relative to `time.Time`.
-
-| Method        | package timex | package time |
-|:--------------|--------------:|-------------:|
-| OrdinalDate   |    4.07 ns/op |   6.28 ns/op |
-| Date          |    6.81 ns/op |   8.04 ns/op |
-| WeekDay       |    0.31 ns/op |   2.80 ns/op |
-| ISOWeek       |    7.52 ns/op |   9.80 ns/op |
-| Add           |   12.23 ns/op |  24.18 ns/op |
-| AddDays       |    0.31 ns/op |   3.12 ns/op |
-| Sub           |    0.31 ns/op |   6.53 ns/op |
-| Parse         |   34.72 ns/op |  55.47 ns/op |
-| Format        |   28.05 ns/op |  59.46 ns/op |
-| MarshalJSON   |   27.53 ns/op |  41.42 ns/op |
-| UnmarshalJSON |   10.89 ns/op |  52.11 ns/op |
+  - Don't rely on type `time.Time`, avoid timezone-related issues.
+  - Represent date format like `YYYY-MM-DD` instead of `2006-01-02`.
+  - Working with date type of MySQL or PostgreSQL directly.
+  - Fast method implementations of `Date` relative to `time.Time`.
+- Self-contained type `TimeOfDay`, without date.
+  - Simple format like `HH:mm:ss` for clarity.
+  - Working with date type of MySQL or PostgreSQL directly.
+  - Efficient manipulation of hours, minutes, seconds, and nanoseconds.
 
 ## Features
 
