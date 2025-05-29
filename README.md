@@ -30,14 +30,23 @@
 
 ## Features
 
-- Fully-implemented type `Date`.
+- Fully-implemented type `Date`:
     - Zero value: January 1, year 1. Align with type `time.Time`.
     - Working with standard library: conversion with type `time.Time`.
     - Parsing & Formatting: conversion with formatted strings.
     - Getter: get year, quarter, month, day of year, day of month, day of week.
     - Manipulation: addition and subtraction with years, months, days.
     - Comparison: comparing dates with `Before`, `After`, `Equal`.
-    - Serialization: JSON and database.
+    - Database serialization and deserialization.
+    - JSON serialization and deserialization.
+- Fully-implemented type `TimeOfDay`:
+    - Working with standard library: conversion with type `time.Time`.
+    - Parsing & Formatting: conversion with formatted strings.
+    - Getter: get hour, minute, second, nanosecond.
+    - Manipulation: addition and subtraction with hours, minutes, seconds, nanoseconds.
+    - Comparison: comparing time of days with `Before`, `After`, `Equal`.
+    - Database serialization and deserialization.
+    - JSON serialization and deserialization.
 
 ## Getting Started
 
