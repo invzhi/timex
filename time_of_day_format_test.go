@@ -8,6 +8,86 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkTimeOfDayParse(b *testing.B) {
+	value := "15:04:05.000000006"
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := timex.ParseTimeOfDay("HH:mm:ss", value)
+			assert.NoError(b, err)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := time.ParseInLocation("15:04:05.000000000", value, time.UTC)
+			assert.NoError(b, err)
+		}
+	})
+}
+
+func BenchmarkTimeOfDayFormat(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.Format("HH:mm:ss")
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Format("15:04:05.000000000")
+		}
+	})
+}
+
+func BenchmarkTimeOfDayMarshalJSON(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := timeOfDay.MarshalJSON()
+			assert.NoError(b, err)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := t.MarshalJSON()
+			assert.NoError(b, err)
+		}
+	})
+}
+
+func BenchmarkTimeOfDayUnmarshalJSON(b *testing.B) {
+	b.Run("Timex", func(b *testing.B) {
+		var timeOfDay timex.TimeOfDay
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := timeOfDay.UnmarshalJSON([]byte(`"15:04:05.000000006"`))
+			assert.NoError(b, err)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		bytes, err := time.Date(2006, 1, 2, 15, 4, 5, 6, time.UTC).MarshalJSON()
+		assert.NoError(b, err)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var d time.Time
+			err = d.UnmarshalJSON(bytes)
+			assert.NoError(b, err)
+		}
+	})
+}
+
 func TestParseTimeOfDay(t *testing.T) {
 	tests := []struct {
 		layout string

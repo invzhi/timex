@@ -8,6 +8,141 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkTimeOfDayClock(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.Clock()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Clock()
+		}
+	})
+}
+
+func BenchmarkTimeOfDayHour(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.Hour()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Hour()
+		}
+	})
+}
+
+func BenchmarkTimeOfDayMinute(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.Minute()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Minute()
+		}
+	})
+}
+
+func BenchmarkTimeOfDaySecond(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.Second()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Second()
+		}
+	})
+}
+
+func BenchmarkTimeOfDayNanosecond(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.Nanosecond()
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Nanosecond()
+		}
+	})
+}
+
+func BenchmarkTimeOfDayAdd(b *testing.B) {
+	timeOfDay := timex.MustNewTimeOfDay(15, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			timeOfDay.AddDuration(24 * time.Hour)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := timeOfDay.Clock()
+		t := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			t.Add(24 * time.Hour)
+		}
+	})
+}
+
+func BenchmarkTimeOfDaySub(b *testing.B) {
+	t1 := timex.MustNewTimeOfDay(15, 4, 5, 6)
+	t2 := timex.MustNewTimeOfDay(14, 4, 5, 6)
+
+	b.Run("Timex", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			t1.Sub(t2)
+		}
+	})
+	b.Run("Time", func(b *testing.B) {
+		hour, min, sec, nsec := t1.Clock()
+		tt1 := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+		tt2 := time.Date(2006, 1, 2, hour, min, sec, nsec, time.UTC)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			tt1.Sub(tt2)
+		}
+	})
+}
+
 func TestNewTimeOfDayFromTime(t *testing.T) {
 	tests := []struct {
 		hour, min, sec, nsec int

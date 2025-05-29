@@ -14,12 +14,14 @@ func BenchmarkDateParse(b *testing.B) {
 
 	b.Run("Timex", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = timex.ParseDate("DD/MM/YYYY", value)
+			_, err := timex.ParseDate("DD/MM/YYYY", value)
+			assert.NoError(b, err)
 		}
 	})
 	b.Run("Time", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = time.ParseInLocation("02/01/2006", value, time.UTC)
+			_, err := time.ParseInLocation("02/01/2006", value, time.UTC)
+			assert.NoError(b, err)
 		}
 	})
 }
@@ -61,7 +63,8 @@ func BenchmarkDateMarshalJSON(b *testing.B) {
 
 	b.Run("Timex", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = date.MarshalJSON()
+			_, err := date.MarshalJSON()
+			assert.NoError(b, err)
 		}
 	})
 	b.Run("Time", func(b *testing.B) {
@@ -69,7 +72,8 @@ func BenchmarkDateMarshalJSON(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, _ = d.MarshalJSON()
+			_, err := d.MarshalJSON()
+			assert.NoError(b, err)
 		}
 	})
 }
@@ -78,25 +82,20 @@ func BenchmarkDateUnmarshalJSON(b *testing.B) {
 	b.Run("Timex", func(b *testing.B) {
 		var date timex.Date
 
-		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_ = date.UnmarshalJSON([]byte(`"2006-01-02"`))
+			err := date.UnmarshalJSON([]byte(`"2006-01-02"`))
+			assert.NoError(b, err)
 		}
-
-		b.StopTimer()
-		assert.True(b, !date.IsZero())
 	})
 	b.Run("Time", func(b *testing.B) {
-		var d time.Time
-		bytes, _ := time.Now().MarshalJSON()
+		bytes, _ := time.Date(2006, 1, 2, 0, 0, 0, 0, time.UTC).MarshalJSON()
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_ = d.UnmarshalJSON(bytes)
+			var d time.Time
+			err := d.UnmarshalJSON(bytes)
+			assert.NoError(b, err)
 		}
-
-		b.StopTimer()
-		assert.True(b, !d.IsZero())
 	})
 }
 

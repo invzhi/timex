@@ -261,7 +261,7 @@ func (t TimeOfDay) format(layout string) string {
 func (t TimeOfDay) Format(layout string) string {
 	switch layout {
 	case RFC3339Time:
-		b := make([]byte, 0, len(RFC3339Time))
+		b := make([]byte, 0, len(RFC3339Time)+10)
 		b = t.appendRFC3339(b)
 		return string(b)
 	default:
@@ -300,7 +300,7 @@ func (t TimeOfDay) GoString() string {
 // MarshalJSON implements the json.Marshaler interface.
 // The time of day is a quoted string in RFC 3339 format.
 func (t TimeOfDay) MarshalJSON() ([]byte, error) {
-	b := make([]byte, 0, len(RFC3339Time)+2)
+	b := make([]byte, 0, len(RFC3339Time)+12)
 	b = append(b, '"')
 	b = t.appendRFC3339(b)
 	b = append(b, '"')
