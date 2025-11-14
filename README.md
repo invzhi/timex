@@ -4,39 +4,17 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/invzhi/timex)](https://goreportcard.com/report/github.com/invzhi/timex)
 [![codecov](https://codecov.io/gh/invzhi/timex/branch/main/graph/badge.svg?token=I2M6JCGY84)](https://codecov.io/gh/invzhi/timex)
 
-📅 A Go package for working with date and time of day.
+📅 A Go package that extends the standard library time with dedicated date and time-of-day types.
 
 ## Why use timex?
 
-- Self-contained type `Date`, focusing on date-specific operations.
-  - Don't rely on type `time.Time`, avoid timezone-related issues.
-  - Represent date format like `YYYY-MM-DD` instead of `2006-01-02`.
-  - Working with date type of MySQL or PostgreSQL directly.
-  - Fast method implementations of `Date` relative to `time.Time`.
-- Self-contained type `TimeOfDay`, without date.
-  - Simple format like `HH:mm:ss` for clarity.
-  - Working with date type of MySQL or PostgreSQL directly.
-  - Efficient manipulation of hours, minutes, seconds, and nanoseconds.
+`timex` is a lightweight and efficiently designed Go package that provides dedicated `Date` and `TimeOfDay` types. It's built with 100% unit test coverage and has no third-party dependencies, making it a reliable choice for time-related operations.
 
-## Features
-
-- Fully-implemented type `Date`:
-    - Zero value: January 1, year 1. Align with type `time.Time`.
-    - Working with standard library: conversion with type `time.Time`.
-    - Parsing & Formatting: conversion with formatted strings.
-    - Getter: get year, quarter, month, day of year, day of month, day of week.
-    - Manipulation: addition and subtraction with years, months, days.
-    - Comparison: comparing dates with `Before`, `After`, `Equal`.
-    - Database serialization and deserialization.
-    - JSON serialization and deserialization.
-- Fully-implemented type `TimeOfDay`:
-    - Working with standard library: conversion with type `time.Time`.
-    - Parsing & Formatting: conversion with formatted strings.
-    - Getter: get hour, minute, second, nanosecond.
-    - Manipulation: addition and subtraction with hours, minutes, seconds, nanoseconds.
-    - Comparison: comparing time of days with `Before`, `After`, `Equal`.
-    - Database serialization and deserialization.
-    - JSON serialization and deserialization.
+- **Missing Standard Library Types:** Go's `time` package lacks distinct types for handling just a date or just a time of day. `timex` introduces `Date` and `TimeOfDay` to bridge this gap, offering a more intuitive and focused API for these specific use cases.
+- **Simplicity and Clarity:** Our `Date` type focuses exclusively on date operations (YYYY-MM-DD), avoiding timezone-related issues inherent in `time.Time` when only a calendar date matters. Similarly, `TimeOfDay` provides a clear HH:mm:ss format for operations strictly on time, independent of any particular date.
+- **Lightweight & Efficient:** `timex` is designed to be lean, with fast method implementations that often outperform `time.Time` for specific date and time-of-day calculations. It's built without any external dependencies, ensuring a minimal footprint.
+- **Database & JSON Compatibility:** Work directly with `DATE` and `TIME` types in databases like MySQL or PostgreSQL, and effortlessly serialize/deserialize these types to and from JSON.
+- **Reliability:** With 100% unit test coverage, you can be confident in the package's correctness and stability.
 
 ## Getting Started
 
