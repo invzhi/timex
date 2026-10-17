@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/invzhi/timex.svg)](https://pkg.go.dev/github.com/invzhi/timex)
 [![codecov](https://codecov.io/gh/invzhi/timex/branch/main/graph/badge.svg?token=I2M6JCGY84)](https://codecov.io/gh/invzhi/timex)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#date-and-time)
 
 📅 A Go package that extends the standard library time with dedicated date and time-of-day types.
 
